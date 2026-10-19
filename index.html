@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>學習遊戲樂園</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background: linear-gradient(160deg, #fff7d6 0%, #d9f2ff 100%);
+    color: #2b2b2b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 16px;
+  }
+  h1 { font-size: clamp(30px, 7vw, 48px); color: #ff7a2f; text-shadow: 3px 3px 0 #fff; }
+  .sub { margin: 10px 0 40px; font-size: 18px; color: #555; }
+  .grid {
+    display: grid; gap: 24px; width: 100%; max-width: 1080px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .card {
+    text-decoration: none; color: inherit;
+    background: #fff; border-radius: 28px; padding: 32px 20px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    border: 5px solid var(--c);
+    box-shadow: 0 8px 0 var(--c);
+    transition: transform .15s, box-shadow .15s;
+  }
+  a.card:hover, a.card:focus-visible { transform: translateY(-6px); box-shadow: 0 14px 0 var(--c); outline: none; }
+  a.card:active { transform: translateY(4px); box-shadow: 0 4px 0 var(--c); }
+  .icon {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: var(--bg); display: grid; place-items: center;
+    font-size: 64px; margin-bottom: 18px;
+  }
+  .subject { font-size: 26px; font-weight: 800; color: var(--c); }
+  .name { font-size: 17px; margin-top: 8px; color: #444; }
+  .go {
+    margin-top: 20px; padding: 10px 28px; border-radius: 999px;
+    background: var(--c); color: #fff; font-weight: 700; font-size: 18px;
+  }
+  .social  { --c: #e8913a; --bg: #fff0dc; }
+  .english { --c: #6c5ce7; --bg: #ece9ff; }
+  .science { --c: #23a55a; --bg: #ddf7e7; }
+  .math    { --c: #2f80ed; --bg: #e0eeff; }
+  .card.soon { cursor: default; opacity: .6; filter: grayscale(.4); }
+  .card.soon:hover { transform: none; box-shadow: 0 8px 0 var(--c); }
+  .card.soon .go { background: #aaa; }
+  footer { margin-top: 48px; font-size: 14px; color: #888; }
+</style>
+</head>
+<body>
+  <h1>🎮 學習遊戲樂園</h1>
+  <p class="sub">選一個科目，開始闖關吧！</p>
+
+  <div class="grid">
+    <a class="card social" href="https://kuog88.github.io/social-puzzle/">
+      <div class="icon">🗺️</div>
+      <div class="subject">國小五上社會</div>
+      <div class="name">石虎探險家・臺灣拼圖大冒險</div>
+      <div class="go">開始玩 ▶</div>
+    </a>
+    <a class="card english" href="https://kuog88.github.io/galaxy-english/">
+      <div class="icon">🚀</div>
+      <div class="subject">初心者英文</div>
+      <div class="name">銀河英語闖關</div>
+      <div class="go">開始玩 ▶</div>
+    </a>
+    <a class="card science" href="https://kuog88.github.io/science5-quest/">
+      <div class="icon">🔬</div>
+      <div class="subject">國小五上自然</div>
+      <div class="name">五上自然闖關探索館</div>
+      <div class="go">開始玩 ▶</div>
+    </a>
+    <div class="card math soon" aria-disabled="true">
+      <div class="icon">🧮</div>
+      <div class="subject">國小五上數學</div>
+      <div class="name">即將推出</div>
+      <div class="go">製作中…</div>
+    </div>
+  </div>
+
+  <footer>國小學習遊戲 · 社會／自然／英文／數學</footer>
+</body>
+</html>
