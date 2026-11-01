@@ -98,10 +98,10 @@
       '#kg-rep iframe{width:100%;height:100%;border:0}' +
       '#kg-rep .x{position:absolute;top:8px;right:10px;z-index:1;width:40px;height:40px;border-radius:50%;border:none;background:#2a9d8f;color:#fff;font-size:22px;cursor:pointer}' +
       '@media print{#kg-rep-btn{display:none}}' +
-      '@media (max-width:480px){#kg-rep-btn{font-size:13px;padding:6px 11px}}';
+      '';
     document.head.appendChild(css);
     btn = document.createElement('button');
-    btn.id = 'kg-rep-btn'; btn.type = 'button'; btn.textContent = '📊 家長報表';
+    btn.id = 'kg-rep-btn'; btn.type = 'button'; btn.innerHTML = '📊<span class="t"> 家長報表</span>';
     btn.title = '給家長看：孩子在這個遊戲的闖關紀錄與常錯題目';
     btn.onclick = openPanel;
     document.body.appendChild(btn);

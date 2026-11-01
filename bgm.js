@@ -8,7 +8,7 @@
   var on = true;
   try { on = localStorage.getItem(STORE) !== '0'; } catch (e) {}
 
-  var ac = null, master = null, echo = null;
+  var ac = null, master = null, echo = null, duck = null, ducked = false;
   var song = null, songKey = null, nextTime = 0, step = 0, timer = null, manual = false, started = false;
 
   // ---------- 小工具 ----------
@@ -51,8 +51,10 @@
     echo = ac.createDelay(1); echo.delayTime.value = .33;
     var fb = ac.createGain(); fb.gain.value = .25;
     var wet = ac.createGain(); wet.gain.value = .3;
-    master.connect(lp); lp.connect(ac.destination);
-    master.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(lp);
+    // duck：唸題目、播影片或語音時把音樂壓低
+    duck = ac.createGain(); duck.gain.value = 1; master.connect(duck);
+    duck.connect(lp); lp.connect(ac.destination);
+    duck.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(lp);
   }
   function note(f, t, dur, type, vol) {
     var o = ac.createOscillator(), g = ac.createGain();
@@ -64,8 +66,17 @@
     o.connect(g); g.connect(master);
     o.start(t); o.stop(t + dur + .3);
   }
+  // 有人在說話（朗讀題目）或有影片、語音在播放嗎？
+  function talking() {
+    try { if (window.speechSynthesis && speechSynthesis.speaking) return true; } catch (e) {}
+    var ms = document.querySelectorAll('audio,video');
+    for (var i = 0; i < ms.length; i++) if (!ms[i].paused && !ms[i].muted && ms[i].volume > 0 && !ms[i].ended) return true;
+    return false;
+  }
   function tick() {
     if (!song || !ac) return;
+    var tk = talking();
+    if (duck && tk !== ducked) { ducked = tk; duck.gain.setTargetAtTime(tk ? .2 : 1, ac.currentTime, tk ? .08 : .6); }
     while (nextTime < ac.currentTime + .35) {
       var s = song, i = step % 32, bar = Math.floor(i / 8), t = nextTime;
       var m = s.mel[i];
