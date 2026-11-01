@@ -73,6 +73,8 @@
   .donate:active { transform: translateY(3px); box-shadow: 0 3px 0 #f5b800; }
   .donate.report { display: inline-block; text-decoration: none; color: #2a9d8f; border-color: #2a9d8f; box-shadow: 0 6px 0 #2a9d8f; margin-top: 36px; }
   .donate.report + .donate { margin-top: 22px; }
+  .feedback { margin-top: 18px; padding: 8px 20px; border-radius: 999px; background: #fff; color: #6c5ce7; border: 2px solid #6c5ce7; font-weight: 700; font-size: 16px; text-decoration: none; }
+  .feedback:hover, .feedback:focus-visible { background: #6c5ce7; color: #fff; outline: none; }
   #qr { margin: auto; border: none; border-radius: 24px; padding: 14px; max-width: min(92vw, 440px); background: #fff; }
   #qr::backdrop { background: rgba(0, 0, 0, .55); }
   #qr img { display: block; width: 100%; height: auto; border-radius: 14px; }
@@ -117,6 +119,7 @@
 
   <a class="donate report" href="report.html">📊 家長報表：看孩子的闖關紀錄</a>
   <button type="button" class="donate" id="donate">💰 金主爸爸贊助點這裡</button>
+  <a class="feedback" href="https://docs.google.com/forms/d/e/1FAIpQLSf0vTXtqv25ZqDAn1FIAj6_xffuh6t8_2NYjqkmi0ryZiveIA/viewform" target="_blank" rel="noopener">💬 意見回饋</a>
   <dialog id="qr" aria-label="贊助 QR Code">
     <img src="donate-qr.jpg" alt="贊助轉帳 QR Code" width="817" height="960">
     <button type="button" class="close">關閉</button>

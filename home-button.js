@@ -11,13 +11,7 @@
     'font:700 15px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;' +
     'text-decoration:none;box-shadow:0 3px 0 #ff7a2f;opacity:.85;transition:opacity .15s,transform .15s}' +
     '#kg-hub-btn:hover,#kg-hub-btn:focus-visible{opacity:1;transform:translateY(-2px);outline:none}' +
-    '@media print{#kg-hub-btn{display:none}}' +
-    // 製作者浮水印：不擋點擊，放下方正中間（左下是回樂園、右下是音樂鍵）
-    '#kg-credit{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:2147482999;pointer-events:none;' +
-    'padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.55);color:rgba(60,60,60,.7);' +
-    'font:600 12px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;white-space:nowrap;' +
-    'text-shadow:0 1px 0 rgba(255,255,255,.8)}' +
-    '@media (max-width:480px){#kg-credit{font-size:10.5px;left:auto;right:6px;transform:none;bottom:62px}}';
+    '@media print{#kg-hub-btn{display:none}}';
   document.head.appendChild(css);
   var a = document.createElement('a');
   a.id = 'kg-hub-btn';
@@ -28,11 +22,6 @@
     if (!confirm('要離開這個遊戲，回到遊戲樂園選科目嗎？')) e.preventDefault();
   });
   document.body.appendChild(a);
-  var credit = document.createElement('div');
-  credit.id = 'kg-credit';
-  credit.setAttribute('aria-hidden', 'true');
-  credit.textContent = '有需要幫助請IG找製作者:xt4photo';
-  document.body.appendChild(credit);
   // 家長報表（國文有自己的報表，不載入）
   if (!window.KGReport && !/\/guoyu-island\//.test(location.pathname)) {
     var rs = document.createElement('script');
