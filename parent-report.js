@@ -67,6 +67,10 @@
       if (!ok) {
         g.wrong.unshift({ ts: now, lv: lv.name, q: clean(info.q), a: clean(info.a, 60), c: clean(info.c, 60) });
         if (g.wrong.length > MAX_WRONG) g.wrong.length = MAX_WRONG;
+      } else if (info.q) {
+        // 錯題本：同一關、同一題後來答對了，就算訂正過
+        var cq = clean(info.q);
+        g.wrong.forEach(function (w) { if (!w.fixed && w.lv === lv.name && w.q === cq) w.fixed = now; });
       }
       g.last = now; save(d); shown();
     },

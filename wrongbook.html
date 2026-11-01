@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>錯題本</title>
+<style>
+  :root { --ink: #2b2b2b; --soft: #6b6b6b; --line: #eadfce; --ok: #23a55a; --bad: #d94f4f; --red: #e2574c; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; color: var(--ink);
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background: linear-gradient(160deg, #fff1e6 0%, #e4f3ff 100%);
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 16px; }
+  a.back { color: var(--red); font-weight: 700; text-decoration: none; }
+  h1 { font-size: clamp(28px, 7vw, 40px); color: var(--red); }
+  h2 { font-size: 19px; }
+  .muted { color: var(--soft); font-size: 14px; line-height: 1.6; }
+  .panel { background: #fff; border: 2px solid var(--line); border-radius: 20px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { font: inherit; font-size: 15px; font-weight: 700; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--line); background: #fff; cursor: pointer; color: var(--ink); }
+  .chip.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .kpis div { background: #fffaf4; border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; }
+  .kpis b { font-size: 28px; font-weight: 900; line-height: 1.2; }
+  .kpis span { font-size: 13px; color: var(--soft); }
+  .btn { font: inherit; font-weight: 800; font-size: 17px; padding: 10px 22px; border-radius: 999px; border: 3px solid var(--red); background: #fff; color: var(--red); cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn.main { background: var(--red); color: #fff; box-shadow: 0 5px 0 #b8402f; }
+  .btn.main:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8402f; }
+  .btn.ok { border-color: var(--ok); color: var(--ok); }
+  .btn.small { font-size: 14px; padding: 6px 14px; border-width: 2px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .game h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tag { display: inline-block; padding: 1px 9px; border-radius: 999px; color: #fff; font-size: 13px; font-weight: 700; background: var(--c, #999); }
+  .s-數學 { --c: #2f80ed; } .s-自然 { --c: #23a55a; } .s-社會 { --c: #e8913a; } .s-英文 { --c: #6c5ce7; }
+  .item { border: 2px solid var(--line); border-radius: 16px; padding: 12px 14px; display: grid; gap: 8px; }
+  .item.fixed { opacity: .6; }
+  .item .q { font-size: 17px; font-weight: 700; line-height: 1.5; }
+  .item .meta { font-size: 13px; color: var(--soft); }
+  .ans { display: grid; gap: 4px; font-size: 15px; background: #fbfbf8; border-radius: 12px; padding: 8px 12px; }
+  .ans .c { color: var(--ok); font-weight: 800; }
+  .ans .a { color: var(--bad); }
+  .badge { font-size: 12px; font-weight: 800; color: var(--ok); border: 2px solid var(--ok); border-radius: 999px; padding: 0 8px; }
+  /* 複習模式 */
+  .card { background: #fff; border: 4px solid var(--red); border-radius: 26px; padding: 22px 18px; display: grid; gap: 14px; text-align: center; box-shadow: 0 8px 0 #f3b3a9; }
+  .card .q { font-size: clamp(20px, 5vw, 26px); font-weight: 800; line-height: 1.5; }
+  .card .ans { text-align: left; font-size: 18px; }
+  .prog { font-weight: 800; color: var(--red); }
+  .empty { text-align: center; padding: 30px 10px; }
+  .empty b { font-size: 46px; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(function () {
+  var KEY = 'kg-report-v1', app = document.getElementById('app');
+  var state = { subj: '', showFixed: false };
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || { games: {} }; } catch (e) { return { games: {} }; } }
+  function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function day(ts) { var d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  // 把同一關、同一題的多次答錯合併成一題
+  function items() {
+    var d = load(), out = [];
+    Object.keys(d.games).forEach(function (id) {
+      var g = d.games[id], map = {};
+      (g.wrong || []).forEach(function (w) {
+        if (!w.q) return;
+        var k = w.lv + '\u0001' + w.q, it = map[k];
+        if (!it) it = map[k] = { id: id, game: g.title || '遊戲', subject: g.subject || '', path: g.path || '', lv: w.lv, q: w.q, c: w.c, a: w.a, n: 0, last: 0, fixed: true };
+        it.n++;
+        if (w.ts > it.last) { it.last = w.ts; it.a = w.a; it.c = w.c || it.c; }
+        if (!w.fixed) it.fixed = false;
+      });
+      Object.keys(map).forEach(function (k) { out.push(map[k]); });
+    });
+    return out.sort(function (a, b) { return b.last - a.last; });
+  }
+  function markFixed(it) {
+    var d = load(), g = d.games[it.id]; if (!g) return;
+    (g.wrong || []).forEach(function (w) { if (w.lv === it.lv && w.q === it.q && !w.fixed) w.fixed = Date.now(); });
+    save(d);
+  }
+  function ansBox(it) {
+    return '<div class="ans"><span class="c">✅ 正確答案：' + esc(it.c || '（請回到關卡再做一次）') + '</span>' +
+      (it.a ? '<span class="a">✏️ 上次寫的：' + esc(it.a) + '</span>' : '') + '</div>';
+  }
+
+  function list() {
+    var all = items(), subs = [];
+    all.forEach(function (it) { if (it.subject && subs.indexOf(it.subject) < 0) subs.push(it.subject); });
+    var todo = all.filter(function (it) { return !it.fixed; }), done = all.length - todo.length;
+    var shown = all.filter(function (it) { return (!state.subj || it.subject === state.subj) && (state.showFixed || !it.fixed); });
+    var pool = todo.filter(function (it) { return !state.subj || it.subject === state.subj; });
+    var groups = {}, order = [];
+    shown.forEach(function (it) { if (!groups[it.id]) { groups[it.id] = []; order.push(it.id); } groups[it.id].push(it); });
+    app.innerHTML =
+      '<a class="back" href="./">← 回遊戲樂園</a>' +
+      '<div class="panel"><h1>📕 錯題本</h1>' +
+      '<p class="muted">這裡收集了在這台裝置上答錯過的題目。先想一想，再按「看答案」。之後在遊戲裡答對同一題，就會自動變成「已訂正」。</p>' +
+      '<div class="kpis"><div><b style="color:var(--red)">' + todo.length + '</b><span>還要訂正</span></div><div><b style="color:var(--ok)">' + done + '</b><span>已訂正</span></div></div>' +
+      '<div class="row"><button class="btn main" id="go"' + (pool.length ? '' : ' disabled') + '>🎯 開始複習' + (pool.length ? '（' + Math.min(10, pool.length) + ' 題）' : '') + '</button></div></div>' +
+      (all.length ? '<div class="panel"><div class="row">' +
+        ['', ].concat(subs).map(function (s) { return '<button class="chip' + (state.subj === s ? ' on' : '') + '" data-s="' + esc(s) + '">' + (s || '全部') + '</button>'; }).join('') +
+        '<label class="row muted" style="margin-left:auto;gap:6px"><input type="checkbox" id="sf"' + (state.showFixed ? ' checked' : '') + '>顯示已訂正</label></div></div>' : '') +
+      (order.length ? order.map(function (id) {
+        var gs = groups[id], g0 = gs[0];
+        return '<div class="panel game s-' + esc(g0.subject) + '"><h2>' + (g0.subject ? '<span class="tag">' + esc(g0.subject) + '</span>' : '') + esc(g0.game) + '</h2>' +
+          gs.map(function (it, i) {
+            return '<div class="item' + (it.fixed ? ' fixed' : '') + '"><div class="meta">' + esc(it.lv) + '・錯 ' + it.n + ' 次・' + day(it.last) + (it.fixed ? '　<span class="badge">已訂正</span>' : '') + '</div>' +
+              '<div class="q">' + esc(it.q) + '</div>' +
+              '<div class="row"><button class="btn small" data-show="' + id + '|' + i + '">👀 看答案</button>' +
+              (it.path ? '<a class="btn small ok" href="' + esc(it.path) + '">去這關練習 ▶</a>' : '') + '</div>' +
+              '<div class="slot" hidden>' + ansBox(it) + '</div></div>';
+          }).join('') + '</div>';
+      }).join('')
+        : '<div class="panel empty"><b>' + (all.length ? '🎉' : '📭') + '</b><p class="muted">' + (all.length ? '這裡的題目都訂正完了，太棒了！' : '還沒有錯題。玩數學、自然、社會的遊戲時答錯的題目，會自動收進來。') + '</p></div>');
+    app.querySelectorAll('[data-s]').forEach(function (b) { b.onclick = function () { state.subj = b.dataset.s; list(); }; });
+    var sf = document.getElementById('sf'); if (sf) sf.onchange = function () { state.showFixed = sf.checked; list(); };
+    app.querySelectorAll('[data-show]').forEach(function (b) { b.onclick = function () { var s = b.closest('.item').querySelector('.slot'); s.hidden = !s.hidden; b.textContent = s.hidden ? '👀 看答案' : '🙈 收起答案'; }; });
+    document.getElementById('go').onclick = function () { if (pool.length) review(shuffle(pool).slice(0, 10)); };
+  }
+
+  // 複習模式：一題一題看，先想再翻答案，自己判斷會不會
+  function review(qs) {
+    var i = 0, got = 0;
+    function show() {
+      if (i >= qs.length) {
+        app.innerHTML = '<div class="card"><div style="font-size:54px">' + (got === qs.length ? '🏆' : '💪') + '</div>' +
+          '<div class="q">複習完了！你說會了 ' + got + ' 題，還有 ' + (qs.length - got) + ' 題要再加油。</div>' +
+          '<p class="muted">還不會的題目，可以回到那一關再玩一次。答對了就會自動訂正。</p>' +
+          '<div class="row" style="justify-content:center"><button class="btn main" id="back">回錯題本</button></div></div>';
+        document.getElementById('back').onclick = list; return;
+      }
+      var it = qs[i];
+      app.innerHTML = '<div class="row"><button class="btn small" id="quit">← 結束複習</button><span class="prog" style="margin-left:auto">第 ' + (i + 1) + ' / ' + qs.length + ' 題</span></div>' +
+        '<div class="card"><div class="muted">' + (it.subject ? '<span class="tag s-' + esc(it.subject) + '">' + esc(it.subject) + '</span> ' : '') + esc(it.game) + '・' + esc(it.lv) + '</div>' +
+        '<div class="q">' + esc(it.q) + '</div>' +
+        '<div id="slot"><button class="btn main" id="flip">🤔 想好了，看答案</button></div></div>';
+      document.getElementById('quit').onclick = list;
+      document.getElementById('flip').onclick = function () {
+        document.getElementById('slot').innerHTML = ansBox(it) +
+          '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn ok" id="yes">😊 我會了</button><button class="btn" id="no">😅 還不太會</button>' +
+          (it.path ? '<a class="btn small" href="' + esc(it.path) + '" style="align-self:center">去這關練習 ▶</a>' : '') + '</div>';
+        document.getElementById('yes').onclick = function () { markFixed(it); got++; i++; show(); };
+        document.getElementById('no').onclick = function () { i++; show(); };
+      };
+    }
+    show();
+  }
+  list();
+})();
+</script>
+</body>
+</html>

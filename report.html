@@ -99,7 +99,7 @@
     for (var i = 0; i < 7; i++) { var k = key(new Date(now - i * 864e5)); ids.forEach(function (id) { var x = (d.games[id].days || {})[k]; if (x) wk += x.r + x.w; }); }
     app.innerHTML =
       '<div class="top">' + (embed ? '' : '<a class="back" href="./">← 回遊戲樂園</a><span class="spacer"></span>') + '</div>' +
-      '<div class="panel"><h1>📊 家長報表</h1>' +
+      '<div class="panel"><h1>📊 家長報表</h1>' + '<p><a class="btn" href="wrongbook.html" target="_top">📕 打開錯題本，讓孩子複習錯過的題目</a></p>' +
       '<p class="muted">孩子在這台裝置（這個瀏覽器）上玩的紀錄。換手機、換瀏覽器或清除瀏覽資料，紀錄就不會帶過去。最近一次作答：' + when(last) + '</p>' +
       '<div class="kpis"><div><b>' + (T.r + T.w) + '</b><span>總作答題數</span></div>' +
       '<div><b>' + pct(T.r, T.r + T.w) + '<small>%</small></b><span>答對率</span></div>' +
@@ -151,7 +151,7 @@
         return '<div class="wrow"><span>' + esc(k) + (L.unit ? ' <span class="muted">（' + esc(L.unit) + '）</span>' : '') + '</span><div class="meter"><i class="' + cls(q) + '" style="width:' + q + '%"></i></div><b class="' + (q < 60 ? 'bad' : '') + '">' + q + '%</b></div>';
       }).join('') + '</div><p class="muted">作答 3 題以上、答對率低於 80% 的關卡，由弱到強排列。可以請孩子再玩一次這幾關。</p>'
         : '<p class="muted">' + (t.r + t.w ? '目前沒有答對率低於 80% 的關卡，表現很穩定！' : '還沒有紀錄。') + '</p>') + '</div>' +
-      '<div class="panel"><h2>最近答錯的題目</h2>' + (wrong.length ? '<div class="tbl"><table><thead><tr><th>時間</th><th>關卡</th><th>題目</th><th>孩子的答案</th><th>正確答案</th></tr></thead><tbody id="wb">' + wrongRows(showN) + '</tbody></table></div>' +
+      '<div class="panel"><h2>最近答錯的題目</h2>' + '<p><a class="btn" href="wrongbook.html" target="_top">📕 到錯題本複習</a></p>' + (wrong.length ? '<div class="tbl"><table><thead><tr><th>時間</th><th>關卡</th><th>題目</th><th>孩子的答案</th><th>正確答案</th></tr></thead><tbody id="wb">' + wrongRows(showN) + '</tbody></table></div>' +
         (wrong.length > showN ? '<div class="row"><button class="btn" id="more">顯示全部 ' + wrong.length + ' 題</button></div>' : '') +
         '<p class="muted">同一題答錯好幾次會分開列出，最新的在最上面。</p>' : '<p class="muted">' + (t.r + t.w ? '還沒有答錯的題目，太棒了！' : '還沒有紀錄。') + '</p>') + '</div>' +
       '<div class="panel"><h2>最近 7 天</h2><div class="days">' + days.map(function (o) {
