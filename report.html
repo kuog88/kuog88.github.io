@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>家長報表</title>
+<style>
+  :root { --ink: #2b2b2b; --soft: #6b6b6b; --line: #e8e2d6; --card: #fff; --ok: #23a55a; --bad: #d94f4f; --teal: #2a9d8f; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; color: var(--ink);
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background: linear-gradient(160deg, #fff7d6 0%, #d9f2ff 100%);
+    padding: 24px 16px 48px;
+  }
+  body.embed { padding: 16px 12px 32px; background: #fbfaf6; }
+  .wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: clamp(26px, 6vw, 36px); color: var(--teal); }
+  h2 { font-size: 20px; }
+  .muted { color: var(--soft); font-size: 14px; line-height: 1.6; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-right: 44px; }
+  .top .spacer { flex: 1; }
+  a.back { color: var(--teal); font-weight: 700; text-decoration: none; }
+  select { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--line); background: #fff; max-width: 100%; }
+  .panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .kpis div { background: #fffdf7; border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; }
+  .kpis b { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .kpis small { font-size: 15px; color: var(--soft); font-weight: 700; }
+  .kpis span { font-size: 13px; color: var(--soft); }
+  .games { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .game { text-align: left; font: inherit; color: inherit; cursor: pointer; background: #fff; border: 3px solid var(--c, var(--line)); border-radius: 16px; padding: 12px 14px; display: grid; gap: 6px; }
+  .game:hover, .game:focus-visible { transform: translateY(-2px); outline: none; box-shadow: 0 4px 0 var(--c, var(--line)); }
+  .game b { font-size: 17px; }
+  .s-數學 { --c: #2f80ed; } .s-自然 { --c: #23a55a; } .s-社會 { --c: #e8913a; } .s-英文 { --c: #6c5ce7; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--c, #999); color: #fff; font-size: 12px; font-weight: 700; margin-right: 6px; }
+  .meter { height: 10px; border-radius: 999px; background: #eee; overflow: hidden; min-width: 60px; }
+  .meter i { display: block; height: 100%; background: var(--ok); border-radius: 999px; }
+  .meter i.low { background: var(--bad); } .meter i.mid { background: #f0a92e; }
+  .tbl { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--soft); font-weight: 700; white-space: nowrap; }
+  td.c, th.c { text-align: center; }
+  td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.q { min-width: 180px; }
+  .bad { color: var(--bad); font-weight: 700; }
+  .ok { color: var(--ok); font-weight: 700; }
+  .stars { color: #f5b800; letter-spacing: 1px; white-space: nowrap; } .stars .off { color: #ddd; }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 150px; }
+  .day { display: grid; grid-template-rows: 1fr auto auto; gap: 4px; height: 100%; text-align: center; font-size: 12px; color: var(--soft); }
+  .day .col { display: flex; flex-direction: column; justify-content: flex-end; }
+  .day .bar { border-radius: 8px 8px 0 0; background: var(--teal); min-height: 2px; position: relative; }
+  .day .bar em { position: absolute; top: -18px; left: 0; right: 0; font-style: normal; font-weight: 700; color: var(--ink); }
+  .weak { display: grid; gap: 8px; }
+  .wrow { display: grid; grid-template-columns: minmax(0, 1fr) 120px 52px; gap: 10px; align-items: center; font-size: 15px; }
+  .btn { font: inherit; font-weight: 700; font-size: 15px; padding: 8px 16px; border-radius: 999px; border: 2px solid var(--teal); background: #fff; color: var(--teal); cursor: pointer; }
+  .btn.danger { border-color: var(--bad); background: var(--bad); color: #fff; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .empty { text-align: center; padding: 28px 12px; }
+  @media (max-width: 480px) { .wrow { grid-template-columns: minmax(0, 1fr) 70px 46px; } .kpis b { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(function () {
+  var KEY = 'kg-report-v1';
+  var qs = new URLSearchParams(location.search), embed = qs.get('embed') === '1';
+  if (embed) document.body.classList.add('embed');
+  var app = document.getElementById('app');
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || { games: {} }; } catch (e) { return { games: {} }; } }
+  function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+  function cls(p) { return p < 60 ? 'low' : p < 80 ? 'mid' : ''; }
+  function when(ts) {
+    if (!ts) return '—';
+    var d = new Date(ts), now = new Date(), hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    var diff = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+    return diff === 0 ? '今天 ' + hm : diff === 1 ? '昨天 ' + hm : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hm;
+  }
+  function mins(ms) { var m = Math.round(ms / 60000); return m < 60 ? m + ' 分' : Math.floor(m / 60) + ' 小時 ' + (m % 60) + ' 分'; }
+  function key(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function totals(g) {
+    var r = 0, w = 0, ms = 0;
+    Object.keys(g.levels || {}).forEach(function (k) { r += g.levels[k].r || 0; w += g.levels[k].w || 0; });
+    Object.keys(g.days || {}).forEach(function (k) { ms += g.days[k].ms || 0; });
+    return { r: r, w: w, ms: ms, lv: Object.keys(g.levels || {}).length };
+  }
+  function sorted(d) { return Object.keys(d.games).sort(function (a, b) { return (d.games[b].last || 0) - (d.games[a].last || 0); }); }
+  function name(g) { return g.title || '遊戲'; }
+
+  function overview() {
+    var d = load(), ids = sorted(d), T = { r: 0, w: 0, ms: 0 }, last = 0;
+    ids.forEach(function (id) { var t = totals(d.games[id]); T.r += t.r; T.w += t.w; T.ms += t.ms; last = Math.max(last, d.games[id].last || 0); });
+    var wk = 0; var now = new Date();
+    for (var i = 0; i < 7; i++) { var k = key(new Date(now - i * 864e5)); ids.forEach(function (id) { var x = (d.games[id].days || {})[k]; if (x) wk += x.r + x.w; }); }
+    app.innerHTML =
+      '<div class="top">' + (embed ? '' : '<a class="back" href="./">← 回遊戲樂園</a><span class="spacer"></span>') + '</div>' +
+      '<div class="panel"><h1>📊 家長報表</h1>' +
+      '<p class="muted">孩子在這台裝置（這個瀏覽器）上玩的紀錄。換手機、換瀏覽器或清除瀏覽資料，紀錄就不會帶過去。最近一次作答：' + when(last) + '</p>' +
+      '<div class="kpis"><div><b>' + (T.r + T.w) + '</b><span>總作答題數</span></div>' +
+      '<div><b>' + pct(T.r, T.r + T.w) + '<small>%</small></b><span>答對率</span></div>' +
+      '<div><b>' + wk + '</b><span>最近 7 天作答</span></div>' +
+      '<div><b style="font-size:22px">' + mins(T.ms) + '</b><span>練習時間（估計）</span></div></div></div>' +
+      '<div class="panel"><h2>玩過的遊戲</h2>' + (ids.length ? '<div class="games">' + ids.map(function (id) {
+        var g = d.games[id], t = totals(g), p = pct(t.r, t.r + t.w);
+        return '<button class="game s-' + esc(g.subject) + '" data-id="' + esc(id) + '"><span>' + (g.subject ? '<span class="tag">' + esc(g.subject) + '</span>' : '') + '<b>' + esc(name(g)) + '</b></span>' +
+          '<span class="muted">作答 ' + (t.r + t.w) + ' 題・答錯 ' + t.w + ' 題・' + t.lv + ' 個關卡</span>' +
+          '<div class="meter"><i class="' + cls(p) + '" style="width:' + p + '%"></i></div>' +
+          '<span class="muted">答對率 ' + p + '%・最近 ' + when(g.last) + '</span></button>';
+      }).join('') + '</div>' : '<p class="muted empty">還沒有紀錄。孩子玩過社會、自然、數學的遊戲後，這裡就會出現。</p>') + '</div>';
+    app.querySelectorAll('.game').forEach(function (b) { b.onclick = function () { detail(b.dataset.id); }; });
+  }
+
+  function detail(id) {
+    var d = load(), g = d.games[id], ids = sorted(d);
+    var picker = ids.length > 1 || !embed ? '<select id="pick" aria-label="選擇遊戲">' + (embed ? '' : '<option value="">全部遊戲總覽</option>') +
+      ids.map(function (x) { return '<option value="' + esc(x) + '"' + (x === id ? ' selected' : '') + '>' + esc((d.games[x].subject ? d.games[x].subject + '・' : '') + name(d.games[x])) + '</option>'; }).join('') + (embed ? '<option value="">全部遊戲總覽</option>' : '') + '</select>' : '';
+    if (!g) {
+      app.innerHTML = '<div class="top"><h1>📊 家長報表</h1><span class="spacer"></span>' + picker + '</div>' +
+        '<div class="panel empty"><p class="muted">這個遊戲還沒有作答紀錄。孩子開始闖關後，每一題的對錯都會記在這裡，你不用在旁邊盯著。</p></div>';
+      bindPick(); return;
+    }
+    var t = totals(g), p = pct(t.r, t.r + t.w);
+    var lvKeys = Object.keys(g.levels);
+    var weak = lvKeys.filter(function (k) { var L = g.levels[k]; return L.r + L.w >= 3 && pct(L.r, L.r + L.w) < 80; })
+      .sort(function (a, b) { var A = g.levels[a], B = g.levels[b]; return pct(A.r, A.r + A.w) - pct(B.r, B.r + B.w); }).slice(0, 6);
+    var days = [], now = new Date(), maxN = 1;
+    for (var i = 6; i >= 0; i--) { var dd = new Date(now - i * 864e5), x = (g.days || {})[key(dd)] || { r: 0, w: 0, ms: 0 }; days.push({ d: dd, x: x }); maxN = Math.max(maxN, x.r + x.w); }
+    var wrong = g.wrong || [], showN = 20;
+    function wrongRows(n) {
+      return wrong.slice(0, n).map(function (w) {
+        return '<tr><td class="n muted">' + when(w.ts) + '</td><td>' + esc(w.lv) + '</td><td class="q">' + esc(w.q || '—') + '</td>' +
+          '<td class="bad">' + esc(w.a || '—') + '</td><td class="ok">' + esc(w.c || '—') + '</td></tr>';
+      }).join('');
+    }
+    app.innerHTML =
+      '<div class="top">' + (embed ? '' : '<a class="back" href="report.html">← 總覽</a>') + '<span class="spacer"></span>' + picker + '</div>' +
+      '<div class="panel"><h1>📊 ' + esc(name(g)) + '</h1>' +
+      '<p class="muted">' + (g.subject ? esc(g.subject) + '・' : '') + '只統計這台裝置上的紀錄。最近一次作答：' + when(g.last) + '</p>' +
+      '<div class="kpis"><div><b>' + (t.r + t.w) + '</b><span>作答題數</span></div>' +
+      '<div><b>' + p + '<small>%</small></b><span>答對率</span></div>' +
+      '<div><b class="bad">' + t.w + '</b><span>答錯題數</span></div>' +
+      '<div><b>' + t.lv + '</b><span>玩過的關卡</span></div>' +
+      '<div><b style="font-size:22px">' + mins(t.ms) + '</b><span>練習時間（估計）</span></div></div></div>' +
+      '<div class="panel"><h2>需要加強的關卡</h2>' + (weak.length ? '<div class="weak">' + weak.map(function (k) {
+        var L = g.levels[k], q = pct(L.r, L.r + L.w);
+        return '<div class="wrow"><span>' + esc(k) + (L.unit ? ' <span class="muted">（' + esc(L.unit) + '）</span>' : '') + '</span><div class="meter"><i class="' + cls(q) + '" style="width:' + q + '%"></i></div><b class="' + (q < 60 ? 'bad' : '') + '">' + q + '%</b></div>';
+      }).join('') + '</div><p class="muted">作答 3 題以上、答對率低於 80% 的關卡，由弱到強排列。可以請孩子再玩一次這幾關。</p>'
+        : '<p class="muted">' + (t.r + t.w ? '目前沒有答對率低於 80% 的關卡，表現很穩定！' : '還沒有紀錄。') + '</p>') + '</div>' +
+      '<div class="panel"><h2>最近答錯的題目</h2>' + (wrong.length ? '<div class="tbl"><table><thead><tr><th>時間</th><th>關卡</th><th>題目</th><th>孩子的答案</th><th>正確答案</th></tr></thead><tbody id="wb">' + wrongRows(showN) + '</tbody></table></div>' +
+        (wrong.length > showN ? '<div class="row"><button class="btn" id="more">顯示全部 ' + wrong.length + ' 題</button></div>' : '') +
+        '<p class="muted">同一題答錯好幾次會分開列出，最新的在最上面。</p>' : '<p class="muted">' + (t.r + t.w ? '還沒有答錯的題目，太棒了！' : '還沒有紀錄。') + '</p>') + '</div>' +
+      '<div class="panel"><h2>最近 7 天</h2><div class="days">' + days.map(function (o) {
+        var n = o.x.r + o.x.w, h = Math.round(n / maxN * 100);
+        return '<div class="day"><div class="col"><div class="bar" style="height:' + h + '%">' + (n ? '<em>' + n + '</em>' : '') + '</div></div><span>' + (o.d.getMonth() + 1) + '/' + o.d.getDate() + '</span><span>' + (n ? pct(o.x.r, n) + '%' : '—') + '</span></div>';
+      }).join('') + '</div><p class="muted">柱子是當天作答題數，下面是答對率。</p></div>' +
+      '<div class="panel"><h2>每個關卡</h2><div class="tbl"><table><thead><tr><th>關卡</th><th class="c">作答</th><th>答對率</th><th>星星</th><th>最近</th></tr></thead><tbody>' +
+        lvKeys.map(function (k) {
+          var L = g.levels[k], n = L.r + L.w, q = pct(L.r, n), st = L.stars;
+          return '<tr><td>' + esc(k) + (L.unit ? '<br><span class="muted">' + esc(L.unit) + '</span>' : '') + '</td><td class="c n">' + n + '</td>' +
+            '<td><div class="row" style="flex-wrap:nowrap"><div class="meter" style="flex:1"><i class="' + cls(q) + '" style="width:' + q + '%"></i></div><span class="n">' + q + '%</span></div></td>' +
+            '<td class="stars">' + (st === undefined ? '<span class="muted">—</span>' : '★'.repeat(st) + '<span class="off">' + '★'.repeat(Math.max(0, 3 - st)) + '</span>') + '</td><td class="n muted">' + when(L.last) + '</td></tr>';
+        }).join('') + '</tbody></table></div></div>' +
+      '<div class="panel"><h2>清除紀錄</h2><p class="muted">只清除這個遊戲的報表紀錄，不會清掉遊戲裡的星星。</p>' +
+        '<div class="row"><button class="btn" id="reset">清除這個遊戲的紀錄</button><button class="btn danger" id="resetYes" hidden>確定清除，無法復原</button></div></div>';
+    var more = document.getElementById('more');
+    if (more) more.onclick = function () { document.getElementById('wb').innerHTML = wrongRows(wrong.length); more.remove(); };
+    document.getElementById('reset').onclick = function () { document.getElementById('resetYes').hidden = false; };
+    document.getElementById('resetYes').onclick = function () { var d2 = load(); delete d2.games[id]; save(d2); detail(id); };
+    bindPick();
+  }
+  function bindPick() {
+    var s = document.getElementById('pick');
+    if (s) s.onchange = function () { s.value ? detail(s.value) : overview(); };
+  }
+  var gid = qs.get('game');
+  gid ? detail(gid) : overview();
+})();
+</script>
+</body>
+</html>

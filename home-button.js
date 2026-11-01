@@ -17,7 +17,7 @@
     'padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.55);color:rgba(60,60,60,.7);' +
     'font:600 12px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;white-space:nowrap;' +
     'text-shadow:0 1px 0 rgba(255,255,255,.8)}' +
-    '@media (max-width:480px){#kg-credit{font-size:10.5px;bottom:60px}}';
+    '@media (max-width:480px){#kg-credit{font-size:10.5px;left:auto;right:6px;transform:none;bottom:62px}}';
   document.head.appendChild(css);
   var a = document.createElement('a');
   a.id = 'kg-hub-btn';
@@ -33,4 +33,10 @@
   credit.setAttribute('aria-hidden', 'true');
   credit.textContent = '有需要幫助請IG找製作者:xt4photo';
   document.body.appendChild(credit);
+  // 家長報表（國文有自己的報表，不載入）
+  if (!window.KGReport && !/\/guoyu-island\//.test(location.pathname)) {
+    var rs = document.createElement('script');
+    rs.src = 'https://kuog88.github.io/parent-report.js';
+    document.head.appendChild(rs);
+  }
 })();
