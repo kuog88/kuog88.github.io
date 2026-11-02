@@ -168,7 +168,7 @@
     // 數學試卷附浮動計算機（試卷設定 calculator: false 可關掉）
     var useCalc = paper.calculator !== undefined ? paper.calculator : /\/math5a-lab\//.test(location.pathname);
     document.body.appendChild(box);
-    var started = Date.now(), picks = [];
+    var started = Date.now(), picks = [], lastWallet = null;
     function close() { box.remove(); var cc = document.getElementById('kgx-calc'); if (cc) cc.remove(); document.documentElement.style.overflow = ''; }
     if (useCalc) addCalc();
     document.documentElement.style.overflow = 'hidden';
@@ -185,7 +185,8 @@
         h += '<div class="res"><div class="sc">' + score + '</div><div class="stars">' + starHTML(stars) + '</div>' +
           '<div>答對 ' + right + ' / ' + all.length + ' 題・作答約 ' + mins + ' 分鐘</div>' +
           '<div style="color:#666">' + (stars === 2 ? '滿分！月考準備好了！' : stars === 1.5 ? '很棒！把錯的題目再看一次就更穩了。' : stars === 1 ? '及格了！錯的地方要訂正喔。' : '還不到 80 分，先看錯的題目和解說，再寫一張吧！') + '</div>' +
-          '<div style="font-size:13px;color:#888">評分：80 分 ★、90 分 ★½、100 分 ★★</div></div>' +
+          '<div style="font-size:13px;color:#888">評分：80 分 ★、90 分 ★½、100 分 ★★</div>' +
+          (stars && lastWallet !== null ? '<div style="margin-top:6px;font-weight:800;color:#b07a00">⭐ 得到 ' + stars + ' 顆星，現在共有 ' + lastWallet + ' 顆！回首頁按「🐾 換萌寵」可以解鎖新萌寵。</div>' : '') + '</div>' +
           '<div class="filter"><button class="btn' + (onlyWrong ? '' : ' main') + '" data-f="all" type="button">全部題目</button><button class="btn' + (onlyWrong ? ' main' : '') + '" data-f="wrong" type="button">只看錯的（' + (all.length - right) + '）</button></div>';
       }
       SEC.forEach(function (s) {
@@ -286,6 +287,8 @@
         }
       });
       var score = Math.round(right / all.length * 100), stars = starsOf(score);
+      // 星星存起來，可以在首頁解鎖萌寵
+      lastWallet = stars && window.KGPet && KGPet.addStars ? KGPet.addStars(stars, full) : null;
       if (window.KGReport) KGReport.done({ right: right, total: all.length, stars: stars });
       var d = loadBest(), k = gameId() + '|' + title, o = d[k] || { n: 0 };
       o.n++; o.last = score; o.ts = Date.now(); if (!(o.best >= score)) o.best = score; o.stars = starsOf(o.best);

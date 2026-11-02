@@ -20,11 +20,11 @@
   };
   var STAGE_NAME = ['寶寶', '小小', '少年', '傳說'];
   var PETS = [
-    { id: 'blue', name: '波波', desc: '戴蛙鏡的藍毛球，最喜歡數字和拼圖。', price: 20,
+    { id: 'blue', name: '波波', desc: '戴蛙鏡的藍毛球，最喜歡數字和拼圖。', price: 20, star: 0,
       stages: [{ img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }] },
-    { id: 'green', name: '嫩芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40,
+    { id: 'green', name: '嫩芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40, star: 2,
       stages: [{ img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }] },
-    { id: 'orange', name: '紫紫', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40,
+    { id: 'orange', name: '紫紫', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40, star: 2,
       stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] }
   ];
   // 挑選視窗裡「還沒開放」的剪影（借現有圖片變形後塗黑，看不出是誰）
@@ -46,7 +46,7 @@
   function load() {
     var d; try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
     d = d || {};
-    d.points = d.points || 0; d.papers = d.papers || 0; d.owned = d.owned || {}; d.log = d.log || [];
+    d.points = d.points || 0; d.stars = d.stars || 0; d.papers = d.papers || 0; d.owned = d.owned || {}; d.log = d.log || [];
     if (d.walk === undefined) d.walk = true;
     return d;
   }
@@ -89,11 +89,27 @@
     },
     setActive: function (id) { var d = load(); if (!d.owned[id]) return; d.active = id; save(d); refresh(); },
     setWalk: function (on) { var d = load(); d.walk = !!on; save(d); refresh(); },
-    // 免費挑一隻當陪伴萌寵（首頁的挑選視窗用）
+    // 月考測驗卷交卷得到的星星（80 分 1、90 分 1.5、100 分 2）存起來換萌寵
+    addStars: function (n, title) {
+      var d = load(); n = +n || 0; if (!n) return d.stars;
+      d.stars = Math.round((d.stars + n) * 10) / 10;
+      d.log.unshift({ ts: Date.now(), title: title || '', star: n }); if (d.log.length > 100) d.log.length = 100;
+      save(d); return d.stars;
+    },
+    canUse: function (id) { var d = load(), p = pet(id); return !!p && (!!d.owned[id] || !p.star); },
+    // 用星星解鎖（已擁有或免費的直接回傳 true）
+    unlock: function (id) {
+      var d = load(), p = pet(id); if (!p) return false;
+      if (d.owned[id] || !p.star) return true;
+      if (d.stars < p.star) return false;
+      d.stars = Math.round((d.stars - p.star) * 10) / 10; d.owned[id] = { papers: 0, since: Date.now() };
+      save(d); return true;
+    },
+    // 挑一隻當陪伴萌寵（免費的或已解鎖的）
     choose: function (id) {
-      var d = load(); if (!pet(id)) return;
-      if (!d.owned[id]) d.owned[id] = { papers: 0, since: Date.now() };
-      d.active = id; d.walk = true; d.skipPick = false; save(d); refresh();
+      var d = load(), p = pet(id); if (!p) return false;
+      if (!d.owned[id]) { if (p.star) return false; d.owned[id] = { papers: 0, since: Date.now() }; }
+      d.active = id; d.walk = true; d.skipPick = false; save(d); refresh(); return true;
     },
     picker: function (auto) { openPicker(auto); }
   };
@@ -254,12 +270,21 @@
       '#kg-pick .pc.lock img{animation:none;filter:brightness(0) opacity(.82)}' +
       '#kg-pick .pc.lock i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:64px;font-weight:900;color:#fff;text-shadow:0 0 10px rgba(0,0,0,.6)}' +
       '#kg-pick .pc.lock b{color:#555}#kg-pick .pc.lock small{color:#7a6a9a;font-weight:700}' +
+      '#kg-pick .wal{background:#fff;border:2px solid #f0dcc0;border-radius:14px;padding:8px 12px;margin:0 0 14px;color:#6b5b48}#kg-pick .wal b{font-size:22px;color:#e0954a}#kg-pick .wal small{display:block;margin-top:2px}' +
+      '#kg-pick .pc .need{font-size:14px;font-weight:800;color:#8a7a66;background:#f4ece0;border-radius:999px;padding:3px 10px}' +
+      '#kg-pick .pc.need img{filter:grayscale(1) opacity(.55);animation:none}' +
+      '#kg-pick .pc.can .need{color:#fff;background:#e0954a}' +
+      '#kg-pick .pc.shake{animation:kgpShake .4s}' +
+      '@keyframes kgpShake{0%,100%{translate:0}25%{translate:-6px}75%{translate:6px}}' +
       '@keyframes kgpBob{0%,100%{translate:0 0}50%{translate:0 -6px}}';
     document.head.appendChild(st);
     var w = document.createElement('div'); w.id = 'kg-pick';
     w.innerHTML = '<div class="bx" role="dialog" aria-label="挑選陪伴萌寵"><h2>🐾 選一隻萌寵陪你讀書！</h2><p>牠會跟著你到每個科目，幫你加油、講笑話給你聽。</p>' +
+      '<div class="wal">⭐ 我的星星：<b>' + d.stars + '</b> 顆　<small>寫「📝 月考測驗卷」80 分得 1 顆、90 分 1.5 顆、100 分 2 顆，可以解鎖新萌寵</small></div>' +
       '<div class="ps">' + PETS.map(function (p) {
-        return '<button class="pc' + (d.active === p.id ? ' on' : '') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt=""><b>' + p.name + '</b><small>' + p.desc + '</small></button>';
+        var own = d.owned[p.id] || !p.star, enough = d.stars >= p.star;
+        var tag = own ? '' : '<span class="need">' + (enough ? '🔓 用 ' + p.star + ' 顆星解鎖' : '🔒 需要 ' + p.star + ' 顆星（還差 ' + Math.round((p.star - d.stars) * 10) / 10 + ' 顆）') + '</span>';
+        return '<button class="pc' + (d.active === p.id ? ' on' : '') + (own ? '' : enough ? ' can' : ' need') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt=""><b>' + p.name + '</b><small>' + p.desc + '</small>' + tag + '</button>';
       }).join('') +
       // 還沒開放的萌寵：黑色剪影＋問號，不能點
       LOCKED.map(function (src, k) {
@@ -270,8 +295,13 @@
     function close() { w.remove(); st.remove(); }
     w.querySelectorAll('button.pc').forEach(function (b) {
       b.onclick = function () {
-        api.choose(b.dataset.id); close();
-        var p = pet(b.dataset.id);
+        var p = pet(b.dataset.id), d3 = load();
+        if (!api.canUse(p.id)) {
+          if (d3.stars < p.star) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); return; }
+          if (!confirm('要用 ' + p.star + ' 顆星解鎖「' + p.name + '」嗎？（你有 ' + d3.stars + ' 顆）')) return;
+          api.unlock(p.id);
+        }
+        api.choose(p.id); close();
         setTimeout(function () { if (el) say('我是' + p.name + '！我們一起去闖關吧！', 3000); }, 500);
       };
     });
