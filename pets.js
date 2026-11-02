@@ -27,6 +27,9 @@
     { id: 'orange', name: '紫紫', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40,
       stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] }
   ];
+  // 挑選視窗裡「還沒開放」的剪影（借現有圖片變形後塗黑，看不出是誰）
+  var LOCKED = ['pets/fluffy-orange.webp', 'pets/fluffy-blue.webp', 'pets/fluffy-green.webp'];
+  var LOCK_TF = ['transform:scaleX(-1) scaleY(1.12)', 'transform:scale(0.9,1.15) rotate(-8deg)', 'transform:scaleX(-1.1) rotate(6deg)'];
   var CHEER = ['你好棒！', '再闖一關吧！', '我陪你一起加油！', '答錯沒關係，再想想～', '今天也很努力喔！', '我們一起變厲害！',
     '慢慢來，看清楚題目再作答！', '錯的題目最有價值，訂正完就學會了！', '休息一下眼睛，再繼續衝！', '你比昨天的自己更厲害了！',
     '遇到難題先深呼吸～', '每答對一題，大腦就長出一點點肌肉！', '我看到你很認真喔！', '加油加油，你一定可以！'];
@@ -245,17 +248,27 @@
       '#kg-pick .pc img{width:120px;height:120px;object-fit:contain;animation:kgpBob 1.6s ease-in-out infinite;filter:drop-shadow(0 6px 6px rgba(0,0,0,.2))}' +
       '#kg-pick .pc b{font-size:22px}#kg-pick .pc small{color:#6b6b6b;line-height:1.5}' +
       '#kg-pick .skip{margin-top:14px;font:inherit;background:none;border:none;color:#8a7a66;text-decoration:underline;cursor:pointer}' +
+      '#kg-pick .pc.lock{cursor:not-allowed;background:#eef0f4;border-style:dashed;border-color:#c9ced8}' +
+      '#kg-pick .pc.lock:hover{transform:none;border-color:#c9ced8}' +
+      '#kg-pick .pc.lock .sil{position:relative;display:block;width:120px;height:120px}' +
+      '#kg-pick .pc.lock img{animation:none;filter:brightness(0) opacity(.82)}' +
+      '#kg-pick .pc.lock i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:64px;font-weight:900;color:#fff;text-shadow:0 0 10px rgba(0,0,0,.6)}' +
+      '#kg-pick .pc.lock b{color:#555}#kg-pick .pc.lock small{color:#7a6a9a;font-weight:700}' +
       '@keyframes kgpBob{0%,100%{translate:0 0}50%{translate:0 -6px}}';
     document.head.appendChild(st);
     var w = document.createElement('div'); w.id = 'kg-pick';
     w.innerHTML = '<div class="bx" role="dialog" aria-label="挑選陪伴萌寵"><h2>🐾 選一隻萌寵陪你讀書！</h2><p>牠會跟著你到每個科目，幫你加油、講笑話給你聽。</p>' +
       '<div class="ps">' + PETS.map(function (p) {
         return '<button class="pc' + (d.active === p.id ? ' on' : '') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt=""><b>' + p.name + '</b><small>' + p.desc + '</small></button>';
+      }).join('') +
+      // 還沒開放的萌寵：黑色剪影＋問號，不能點
+      LOCKED.map(function (src, k) {
+        return '<div class="pc lock" aria-disabled="true" title="等待贊助解鎖新萌寵"><span class="sil"><img src="' + url(src) + '" alt="" style="' + LOCK_TF[k] + '"><i>?</i></span><b>？？？</b><small>等待贊助解鎖新萌寵</small></div>';
       }).join('') + '</div>' +
       '<button class="skip" type="button">' + (d.active ? '不換了，關閉' : '先不要，直接選科目') + '</button></div>';
     document.body.appendChild(w);
     function close() { w.remove(); st.remove(); }
-    w.querySelectorAll('.pc').forEach(function (b) {
+    w.querySelectorAll('button.pc').forEach(function (b) {
       b.onclick = function () {
         api.choose(b.dataset.id); close();
         var p = pet(b.dataset.id);
