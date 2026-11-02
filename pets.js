@@ -22,9 +22,9 @@
   var PETS = [
     { id: 'blue', name: '波波', desc: '戴蛙鏡的藍毛球，最喜歡數字和拼圖。', price: 20,
       stages: [{ img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }] },
-    { id: 'green', name: '嫩芽', desc: '頭上長葉子的綠毛球，喜歡觀察大自然。', price: 40,
+    { id: 'green', name: '嫩芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40,
       stages: [{ img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }] },
-    { id: 'orange', name: '橘橘', desc: '揹地圖的橘毛球，夢想環遊全世界。', price: 40,
+    { id: 'orange', name: '紫紫', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40,
       stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] }
   ];
   var CHEER = ['你好棒！', '再闖一關吧！', '我陪你一起加油！', '答錯沒關係，再想想～', '今天也很努力喔！', '我們一起變厲害！',
@@ -85,7 +85,14 @@
       save(d); refresh(); return true;
     },
     setActive: function (id) { var d = load(); if (!d.owned[id]) return; d.active = id; save(d); refresh(); },
-    setWalk: function (on) { var d = load(); d.walk = !!on; save(d); refresh(); }
+    setWalk: function (on) { var d = load(); d.walk = !!on; save(d); refresh(); },
+    // 免費挑一隻當陪伴萌寵（首頁的挑選視窗用）
+    choose: function (id) {
+      var d = load(); if (!pet(id)) return;
+      if (!d.owned[id]) d.owned[id] = { papers: 0, since: Date.now() };
+      d.active = id; d.walk = true; d.skipPick = false; save(d); refresh();
+    },
+    picker: function (auto) { openPicker(auto); }
   };
   window.KGPet = api;
 
@@ -141,6 +148,7 @@
       if (sd.visitor) { el.hidden = true; schedule(8000 + Math.random() * 10000, true); }
       else chatter();
     }
+    if (!sd.visitor && el.hidden) { clearTimeout(visitT); el.hidden = false; chatter(); }
     var key = sd.p.id + sd.s;
     if (key !== curKey) { curKey = key; img.src = url(sd.st.img); }
     el.className = (el.classList.contains('left') ? 'left ' : '') + 's' + sd.s;
@@ -219,6 +227,44 @@
       setTimeout(done, 1400);
     }
   }
+
+  // ---------- 挑選陪伴萌寵的視窗 ----------
+  function openPicker(auto) {
+    if (document.getElementById('kg-pick')) return;
+    var d = load();
+    var st = document.createElement('style');
+    st.textContent =
+      '#kg-pick{position:fixed;inset:0;z-index:2147483400;background:rgba(40,30,20,.55);display:flex;align-items:center;justify-content:center;padding:14px;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}' +
+      '#kg-pick .bx{width:min(760px,100%);max-height:94vh;overflow:auto;background:linear-gradient(160deg,#fff7e6,#eaf6ff);border-radius:26px;padding:22px 18px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.35)}' +
+      '#kg-pick h2{margin:0 0 4px;font-size:clamp(22px,5.5vw,30px);color:#b5651d}' +
+      '#kg-pick p{margin:0 0 14px;color:#6b5b48}' +
+      '#kg-pick .ps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}' +
+      '#kg-pick .pc{font:inherit;cursor:pointer;background:#fff;border:4px solid #f0dcc0;border-radius:22px;padding:14px 10px;display:grid;gap:6px;justify-items:center;color:#2b2b2b;transition:transform .15s}' +
+      '#kg-pick .pc:hover,#kg-pick .pc:focus-visible{transform:translateY(-4px);border-color:#e0954a;outline:none}' +
+      '#kg-pick .pc.on{border-color:#e0954a;box-shadow:0 6px 0 #f3c08a}' +
+      '#kg-pick .pc img{width:120px;height:120px;object-fit:contain;animation:kgpBob 1.6s ease-in-out infinite;filter:drop-shadow(0 6px 6px rgba(0,0,0,.2))}' +
+      '#kg-pick .pc b{font-size:22px}#kg-pick .pc small{color:#6b6b6b;line-height:1.5}' +
+      '#kg-pick .skip{margin-top:14px;font:inherit;background:none;border:none;color:#8a7a66;text-decoration:underline;cursor:pointer}' +
+      '@keyframes kgpBob{0%,100%{translate:0 0}50%{translate:0 -6px}}';
+    document.head.appendChild(st);
+    var w = document.createElement('div'); w.id = 'kg-pick';
+    w.innerHTML = '<div class="bx" role="dialog" aria-label="挑選陪伴萌寵"><h2>🐾 選一隻萌寵陪你讀書！</h2><p>牠會跟著你到每個科目，幫你加油、講笑話給你聽。</p>' +
+      '<div class="ps">' + PETS.map(function (p) {
+        return '<button class="pc' + (d.active === p.id ? ' on' : '') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt=""><b>' + p.name + '</b><small>' + p.desc + '</small></button>';
+      }).join('') + '</div>' +
+      '<button class="skip" type="button">' + (d.active ? '不換了，關閉' : '先不要，直接選科目') + '</button></div>';
+    document.body.appendChild(w);
+    function close() { w.remove(); st.remove(); }
+    w.querySelectorAll('.pc').forEach(function (b) {
+      b.onclick = function () {
+        api.choose(b.dataset.id); close();
+        var p = pet(b.dataset.id);
+        setTimeout(function () { if (el) say('我是' + p.name + '！我們一起去闖關吧！', 3000); }, 500);
+      };
+    });
+    w.querySelector('.skip').onclick = function () { if (auto) { var d2 = load(); d2.skipPick = true; save(d2); } close(); };
+  }
+
   // 蓋到遊戲按鈕時讓開（和 home-button.js 同樣的做法）
   var lastDodgeMove = 0;
   function dodge() {
