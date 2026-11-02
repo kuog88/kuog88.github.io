@@ -137,9 +137,12 @@
     if (!all.length) { alert('這份測驗卷的題目還在準備中！'); return; }
     var title = paper.title, full = (grade ? grade + ' ' : '') + title;
     var box = document.createElement('div'); box.id = 'kg-exam';
+    // 數學試卷附浮動計算機（試卷設定 calculator: false 可關掉）
+    var useCalc = paper.calculator !== undefined ? paper.calculator : /\/math5a-lab\//.test(location.pathname);
     document.body.appendChild(box);
     var started = Date.now(), picks = [];
-    function close() { box.remove(); document.documentElement.style.overflow = ''; }
+    function close() { box.remove(); var cc = document.getElementById('kgx-calc'); if (cc) cc.remove(); document.documentElement.style.overflow = ''; }
+    if (useCalc) addCalc();
     document.documentElement.style.overflow = 'hidden';
 
     function render(done, onlyWrong) {
@@ -234,6 +237,85 @@
       if (window.__kgExamMounted) window.__kgExamMounted.forEach(function (f) { f(); });
     }
     render(false);
+  }
+
+
+  // ---------- 數學試卷的浮動計算機（可拖曳、縮放、收起） ----------
+  var CALC_CSS =
+    '#kgx-calc{position:fixed;right:16px;top:90px;z-index:2147483600;width:250px;background:#2f3542;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:"Microsoft JhengHei",Arial,sans-serif;user-select:none;touch-action:none;transform-origin:top right}' +
+    '#kgx-calc *{box-sizing:border-box}' +
+    '#kgx-calc .hd{display:flex;align-items:center;gap:4px;padding:6px 8px;color:#fff;cursor:move;font-weight:700;font-size:14px}' +
+    '#kgx-calc .hd span{flex:1}' +
+    '#kgx-calc .hd button{border:none;background:#57606f;color:#fff;border-radius:8px;width:28px;height:28px;font-size:15px;cursor:pointer;padding:0}' +
+    '#kgx-calc .scr{margin:0 8px;background:#dfe6e9;border-radius:10px;padding:6px 10px;text-align:right;min-height:62px;display:grid;align-content:end}' +
+    '#kgx-calc .ex{font-size:14px;color:#555;min-height:18px;word-break:break-all}' +
+    '#kgx-calc .rs{font-size:26px;font-weight:800;color:#222;word-break:break-all}' +
+    '#kgx-calc .ks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px}' +
+    '#kgx-calc .ks button{border:none;border-radius:10px;height:42px;font-size:19px;font-weight:700;cursor:pointer;background:#f1f2f6;color:#222;padding:0}' +
+    '#kgx-calc .ks .op{background:#ffa502;color:#fff}#kgx-calc .ks .eq{background:#2ed573;color:#fff}#kgx-calc .ks .fn{background:#a4b0be;color:#222}' +
+    '#kgx-calc.min{width:auto;background:none;box-shadow:none}' +
+    '#kgx-calc.min .scr,#kgx-calc.min .ks,#kgx-calc.min .hd span,#kgx-calc.min .hd .sz{display:none}' +
+    '#kgx-calc.min .hd{padding:0}#kgx-calc.min .hd .mn{width:54px;height:54px;border-radius:50%;font-size:28px;background:#2f3542;box-shadow:0 6px 16px rgba(0,0,0,.3)}';
+  // 安全的四則運算（不使用 eval）：支援 + − × ÷、括號、小數，先乘除後加減
+  function calcEval(str) {
+    var t = str.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-'), i = 0;
+    function peek() { return t[i]; }
+    function num() { var m = t.slice(i).match(/^\d*\.?\d+/); if (!m) throw 0; i += m[0].length; return parseFloat(m[0]); }
+    function factor() {
+      if (peek() === '-') { i++; return -factor(); }
+      if (peek() === '(') { i++; var v = expr(); if (peek() === ')') i++; return v; }
+      return num();
+    }
+    function term() { var v = factor(); while (peek() === '*' || peek() === '/') { var o = t[i++], w = factor(); if (o === '/' && w === 0) throw 1; v = o === '*' ? v * w : v / w; } return v; }
+    function expr() { var v = term(); while (peek() === '+' || peek() === '-') { var o = t[i++], w = term(); v = o === '+' ? v + w : v - w; } return v; }
+    var r = expr(); if (i < t.length) throw 0;
+    return Math.round(r * 1e10) / 1e10;
+  }
+  function addCalc() {
+    if (document.getElementById('kgx-calc')) return document.getElementById('kgx-calc');
+    if (!document.getElementById('kgx-calc-css')) { var st = document.createElement('style'); st.id = 'kgx-calc-css'; st.textContent = CALC_CSS; document.head.appendChild(st); }
+    var c = document.createElement('div'); c.id = 'kgx-calc';
+    var keys = [['C', 'fn'], ['(', 'fn'], [')', 'fn'], ['÷', 'op'], ['7'], ['8'], ['9'], ['×', 'op'], ['4'], ['5'], ['6'], ['−', 'op'], ['1'], ['2'], ['3'], ['+', 'op'], ['0'], ['.'], ['⌫', 'fn'], ['=', 'eq']];
+    c.innerHTML = '<div class="hd"><span>🧮 計算機</span><button class="sz" data-z="-" type="button" title="縮小">－</button><button class="sz" data-z="+" type="button" title="放大">＋</button><button class="mn" type="button" title="收起／打開">🧮</button></div>' +
+      '<div class="scr"><div class="ex"></div><div class="rs">0</div></div><div class="ks">' + keys.map(function (k) { return '<button type="button" class="' + (k[1] || '') + '" data-k="' + k[0] + '">' + k[0] + '</button>'; }).join('') + '</div>';
+    document.body.appendChild(c);
+    var ex = c.querySelector('.ex'), rs = c.querySelector('.rs'), cur = '', justEq = false, scale = 1;
+    if (innerWidth < 600) c.classList.add('min');   // 手機先收起來，點 🧮 打開
+    function show() { rs.textContent = cur || '0'; }
+    c.querySelectorAll('.ks button').forEach(function (b) {
+      b.onclick = function () {
+        var k = b.dataset.k;
+        if (k === 'C') { cur = ''; ex.textContent = ''; }
+        else if (k === '⌫') cur = cur.slice(0, -1);
+        else if (k === '=') {
+          if (!cur) return;
+          try { var v = calcEval(cur); ex.textContent = cur + ' ='; cur = String(v); justEq = true; show(); return; }
+          catch (e) { ex.textContent = e === 1 ? '不能除以 0' : '算式不完整'; return; }
+        } else {
+          if (justEq && /[0-9.(]/.test(k)) cur = '';
+          if (cur.length < 40) cur += k;
+        }
+        justEq = false; show();
+      };
+    });
+    var mnBtn = c.querySelector('.mn'), skip = false;
+    mnBtn.onclick = function () { if (skip) return; c.classList.toggle('min'); };
+    c.querySelectorAll('.sz').forEach(function (b) { b.onclick = function () { scale = Math.max(0.7, Math.min(1.6, scale + (b.dataset.z === '+' ? 0.15 : -0.15))); c.style.transform = 'scale(' + scale + ')'; }; });
+    // 拖曳標題列移動（收起時拖 🧮 圓鈕）
+    var hd = c.querySelector('.hd');
+    hd.addEventListener('pointerdown', function (e) {
+      if (e.target.tagName === 'BUTTON' && e.target !== mnBtn) return;
+      var r = c.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, sx = e.clientX, sy = e.clientY, drag = false;
+      function mv(ev) {
+        if (!drag && Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 6) return;
+        drag = true; c.style.right = 'auto';
+        c.style.left = Math.max(0, Math.min(innerWidth - 60, ev.clientX - dx)) + 'px';
+        c.style.top = Math.max(0, Math.min(innerHeight - 60, ev.clientY - dy)) + 'px';
+      }
+      function up() { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); if (drag) { skip = true; setTimeout(function () { skip = false; }, 60); } }
+      addEventListener('pointermove', mv); addEventListener('pointerup', up);
+    });
+    return c;
   }
 
   // 在年級頁畫出「月考測驗卷」欄位
