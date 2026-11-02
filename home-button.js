@@ -32,9 +32,9 @@
     rs.src = 'https://kuog88.github.io/parent-report.js';
     document.head.appendChild(rs);
   }
-  // 月考測驗卷（英文由另一邊獨立管理，不載入）。陪讀萌寵 pets.js 暫停，家長要時再加回 'pets.js'
+  // 月考測驗卷與隨機出現的萌寵（英文由另一邊獨立管理，不載入）
   if (!/\/galaxy-english\//.test(location.pathname)) {
-    ['kg-exam.js'].forEach(function (f) {
+    ['kg-exam.js', 'pets.js'].forEach(function (f) {
       var s = document.createElement('script');
       s.src = 'https://kuog88.github.io/' + f;
       document.head.appendChild(s);

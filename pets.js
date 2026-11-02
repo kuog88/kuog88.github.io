@@ -27,7 +27,17 @@
     { id: 'orange', name: '橘橘', desc: '揹地圖的橘毛球，夢想環遊全世界。', price: 40,
       stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] }
   ];
-  var CHEER = ['你好棒！', '再闖一關吧！', '我陪你一起加油！', '答錯沒關係，再想想～', '今天也很努力喔！', '我們一起變厲害！', '寫一張測驗卷，我就會長大喔！'];
+  var CHEER = ['你好棒！', '再闖一關吧！', '我陪你一起加油！', '答錯沒關係，再想想～', '今天也很努力喔！', '我們一起變厲害！',
+    '慢慢來，看清楚題目再作答！', '錯的題目最有價值，訂正完就學會了！', '休息一下眼睛，再繼續衝！', '你比昨天的自己更厲害了！',
+    '遇到難題先深呼吸～', '每答對一題，大腦就長出一點點肌肉！', '我看到你很認真喔！', '加油加油，你一定可以！'];
+  // 短笑話：[問題, 答案]，先問、隔兩秒再說答案
+  var JOKE = [['什麼東西越洗越髒？', '水！'], ['什麼門永遠關不起來？', '球門！'], ['什麼書在書店買不到？', '秘書！'],
+    ['哪一種布剪不斷？', '瀑布！'], ['鉛筆姓什麼？', '姓「蕭」（削）！'], ['什麼人一年只上一天班？', '聖誕老公公！'],
+    ['什麼東西明明是你的，別人卻用得比你多？', '你的名字！'], ['什麼數字最聽話？', '一百，百依百順！'],
+    ['為什麼數學課本總是愁眉苦臉？', '因為它有好多「問題」！'], ['時鐘為什麼總是很忙？', '因為它一直在趕時間！'],
+    ['哪一個字大家都念「錯」？', '就是「錯」這個字！'], ['什麼東西越生氣越大？', '脾氣！'], ['什麼東西有頭沒有腳？', '火柴棒！'],
+    ['小明的爸爸有三個兒子：大毛、二毛，老三叫什麼？', '小明啊！'], ['什麼蛋不能吃？', '笨蛋～但你不是喔！'],
+    ['什麼動物最會寫字？', '小鴨子，因為牠會「呱呱呱」（寫寫寫）～好啦這個有點冷！']];
 
   // ---------- 資料 ----------
   function load() {
@@ -83,12 +93,12 @@
   var el = null, img = null, bubble = null, moveT = null, playing = false, animIdx = 0, curKey = '';
   var css = document.createElement('style');
   css.textContent =
-    '#kg-pet{position:fixed;left:40%;top:70%;z-index:2147482990;width:84px;height:84px;cursor:pointer;transition:left 3.2s ease-in-out,top 3.2s ease-in-out;touch-action:manipulation;-webkit-tap-highlight-color:transparent}' +
+    '#kg-pet[hidden]{display:none}#kg-pet{position:fixed;left:40%;top:70%;z-index:2147482990;width:84px;height:84px;cursor:pointer;transition:left 3.2s ease-in-out,top 3.2s ease-in-out;touch-action:manipulation;-webkit-tap-highlight-color:transparent}' +
     '#kg-pet img{width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25));animation:kgpBob 1.6s ease-in-out infinite;transform-origin:50% 90%}' +
     '#kg-pet.left img{transform:scaleX(-1)}' +
     '#kg-pet.s2{width:96px;height:96px}#kg-pet.s3{width:108px;height:108px}#kg-pet.s4{width:120px;height:120px}' +
     '#kg-pet .crown{position:absolute;left:50%;top:-14px;transform:translateX(-50%);font-size:22px;pointer-events:none}' +
-    '#kg-pet .bub{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:6px;white-space:nowrap;background:#fff;color:#333;border:2px solid #ffb84d;border-radius:14px;padding:4px 10px;font:700 14px "Microsoft JhengHei","PingFang TC",sans-serif;box-shadow:0 3px 8px rgba(0,0,0,.15);pointer-events:none;opacity:0;transition:opacity .2s}' +
+    '#kg-pet .bub{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:6px;white-space:normal;width:max-content;max-width:min(230px,70vw);text-align:center;line-height:1.4;background:#fff;color:#333;border:2px solid #ffb84d;border-radius:14px;padding:4px 10px;font:700 14px "Microsoft JhengHei","PingFang TC",sans-serif;box-shadow:0 3px 8px rgba(0,0,0,.15);pointer-events:none;opacity:0;transition:opacity .2s}' +
     '#kg-pet .bub.on{opacity:1}' +
     '#kg-pet .fx{position:absolute;left:50%;top:10%;font-size:22px;pointer-events:none;animation:kgpFly 1.2s ease-out forwards}' +
     '#kg-pet.a-jump img{animation:kgpJump .7s ease-in-out 2}' +
@@ -106,9 +116,13 @@
     '@media print{#kg-pet{display:none}}' +
     '@media (prefers-reduced-motion:reduce){#kg-pet{transition:none}#kg-pet img{animation:none!important}}';
 
+  var visitor = null;   // 還沒有自己的萌寵時：隨機一隻來串門子
   function stageData() {
     var d = load(), p = d.active && pet(d.active), o = p && d.owned[p.id];
-    if (!p || !o) return null;
+    if (!p || !o) {
+      if (!visitor) visitor = PETS[Math.floor(Math.random() * PETS.length)];
+      return { d: d, p: visitor, s: 1, st: visitor.stages[0], visitor: true };
+    }
     var s = stageOf(o.papers);
     return { d: d, p: p, s: s, st: p.stages[s - 1] || p.stages[0] };
   }
@@ -124,6 +138,8 @@
       el.addEventListener('click', play);
       document.body.appendChild(el);
       wander();
+      if (sd.visitor) { el.hidden = true; schedule(8000 + Math.random() * 10000, true); }
+      else chatter();
     }
     var key = sd.p.id + sd.s;
     if (key !== curKey) { curKey = key; img.src = url(sd.st.img); }
@@ -151,14 +167,47 @@
     }
     moveT = setTimeout(wander, 4500 + Math.random() * 4000);
   }
-  function say(t) { bubble.textContent = t; bubble.classList.add('on'); setTimeout(function () { bubble.classList.remove('on'); }, 1800); }
+  var sayT = null;
+  function say(t, ms) {
+    clearTimeout(sayT); bubble.textContent = t; bubble.classList.add('on');
+    sayT = setTimeout(function () { bubble.classList.remove('on'); }, ms || 2600);
+  }
+  // 隨機說打氣的話或講一個短笑話
+  function talk() {
+    if (!el || el.hidden) return;
+    if (Math.random() < 0.45) {
+      var j = JOKE[Math.floor(Math.random() * JOKE.length)];
+      say(j[0], 2600); setTimeout(function () { if (el) say(j[1], 3200); }, 2700);
+    } else say(CHEER[Math.floor(Math.random() * CHEER.length)]);
+  }
+  var talkT = null, visitT = null;
+  function chatter() { clearTimeout(talkT); talkT = setTimeout(function () { talk(); chatter(); }, 16000 + Math.random() * 12000); }
+  // 訪客模式：出現 40～70 秒，離開 1.5～3 分鐘，再換一隻隨機出現
+  function schedule(wait, show) {
+    clearTimeout(visitT);
+    visitT = setTimeout(function () {
+      if (!el) return;
+      if (show) {
+        visitor = PETS[Math.floor(Math.random() * PETS.length)]; curKey = ''; refresh();
+        el.hidden = false; wander();
+        setTimeout(function () { say(['嗨！我來陪你讀書囉～', '哈囉！我路過來幫你加油！', '嘿嘿，偷偷來看你在做什麼～'][Math.floor(Math.random() * 3)]); }, 900);
+        chatter();
+        schedule(40000 + Math.random() * 30000, false);
+      } else {
+        say('我先去散步，等一下再來找你！', 2200);
+        clearTimeout(talkT);
+        setTimeout(function () { if (el) el.hidden = true; }, 2300);
+        schedule(90000 + Math.random() * 90000, true);
+      }
+    }, wait);
+  }
   // 點一下：輪流播放動畫（自訂的動圖，或內建動畫）
   function play() {
     var sd = stageData(); if (!sd || playing) return;
     playing = true;
     var anims = sd.st.anims && sd.st.anims.length ? sd.st.anims : null;
     var done = function () { playing = false; el.classList.remove('a-jump', 'a-spin', 'a-wiggle', 'a-heart'); img.src = url(sd.st.img); };
-    say(CHEER[Math.floor(Math.random() * CHEER.length)]);
+    talk();
     if (anims) {
       var a = anims[animIdx++ % anims.length], src = typeof a === 'string' ? a : a.src, ms = (typeof a === 'object' && a.ms) || 2000;
       img.src = url(src) + (url(src).indexOf('?') < 0 ? '?t=' : '&t=') + Date.now(); // 從頭播放
@@ -171,6 +220,7 @@
     }
   }
   // 蓋到遊戲按鈕時讓開（和 home-button.js 同樣的做法）
+  var lastDodgeMove = 0;
   function dodge() {
     if (!el || playing) return;
     el.classList.remove('kg-dodge');
@@ -180,7 +230,12 @@
       var t = stack[i];
       if (t === el || el.contains(t)) continue;
       if (t === document.body || t === document.documentElement) break;
-      if (t.closest && t.closest('button,a[href],input,select,textarea,[role="button"],[onclick],[draggable="true"]')) { el.classList.add('kg-dodge'); break; }
+      if (t.closest && t.closest('button,a[href],input,select,textarea,[role="button"],[onclick],[draggable="true"]')) {
+        // 先讓點擊穿過去，再走到別的地方
+        el.classList.add('kg-dodge');
+        if (Date.now() - lastDodgeMove > 3500) { lastDodgeMove = Date.now(); wander(); }
+        break;
+      }
     }
   }
   setInterval(dodge, 500);
