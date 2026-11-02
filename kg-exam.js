@@ -45,6 +45,14 @@
     '#kg-exam .opts button.sel{border-color:#2f6fd6;background:#eaf2ff;font-weight:700}' +
     '#kg-exam .it input{font:inherit;font-size:18px;padding:8px 10px;border:2px solid #ccc;border-radius:10px;width:min(320px,100%)}' +
     '#kg-exam .it input:focus{outline:none;border-color:#2f6fd6}' +
+    '#kg-exam .it input.pick{cursor:pointer;background:#fffdf2;min-width:140px}' +
+    '#kg-exam .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}' +
+    '#kg-exam .chips button{font:inherit;font-size:17px;padding:7px 14px;border:2px solid #d8c8ad;border-radius:999px;background:#fff;cursor:pointer;color:#222;min-height:42px}' +
+    '#kg-exam .chips button.sel{border-color:#2f6fd6;background:#eaf2ff;font-weight:700}' +
+    '#kg-exam .np{display:grid;grid-template-columns:repeat(5,minmax(0,56px));gap:6px;margin-top:8px}' +
+    '#kg-exam .np button{font:inherit;font-size:19px;font-weight:700;min-height:44px;border:2px solid #ccc;border-radius:10px;background:#fff;cursor:pointer;color:#222}' +
+    '#kg-exam .np button.fn{background:#f1ede4}' +
+    '#kg-exam .typ{font:inherit;font-size:13px;color:#666;background:none;border:none;text-decoration:underline;cursor:pointer;margin-left:8px}' +
     '#kg-exam .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #ddd;padding:10px 16px;display:flex;justify-content:center;align-items:center;gap:14px;z-index:3;flex-wrap:wrap}' +
     '#kg-exam .btn{font:inherit;font-size:17px;font-weight:800;padding:10px 26px;border-radius:999px;border:2px solid #8b5e34;background:#fff;color:#8b5e34;cursor:pointer}' +
     '#kg-exam .btn.main{background:#8b5e34;color:#fff}' +
@@ -133,6 +141,26 @@
     var bank = (bankAll || []).filter(function (b) { return !units || units.indexOf(unitOf(b)) >= 0; });
     var count = paper.count || 45;
     var secs = build(bank, count), all = [];
+    var pool = [];   // 範圍內所有填充題的答案，當詞語框的誘答
+    bank.forEach(function (b) {
+      var q = typeof b === 'function' ? b() : b;
+      if (typeOf(q) !== 'fill') return;
+      var a = Array.isArray(q.answer) ? q.answer[0] : q.answer;
+      if (a !== undefined && a !== null && String(a).trim()) pool.push({ a: String(a), unit: q.unit });
+    });
+    (secs.fill || []).forEach(function (q) {
+      var a = String(Array.isArray(q.answer) ? q.answer[0] : q.answer);
+      q.numeric = !isNaN(num(a));
+      if (q.numeric || q.chips) return;
+      var seen = {}, out = [a]; seen[norm(a)] = 1;
+      var cand = shuffle(pool.filter(function (x) { return x.unit === q.unit && isNaN(num(x.a)); })).concat(shuffle(pool.filter(function (x) { return x.unit !== q.unit && isNaN(num(x.a)); })));
+      for (var k = 0; k < cand.length && out.length < 4; k++) {
+        var n = norm(cand[k].a);
+        if (seen[n] || same(cand[k].a, q.answer)) continue;
+        seen[n] = 1; out.push(cand[k].a);
+      }
+      q.chips = out.length > 1 ? shuffle(out) : null;
+    });
     SEC.forEach(function (s) { (secs[s[0]] || []).forEach(function (q) { all.push(q); }); });
     if (!all.length) { alert('這份測驗卷的題目還在準備中！'); return; }
     var title = paper.title, full = (grade ? grade + ' ' : '') + title;
@@ -175,7 +203,15 @@
           else if (t === 'choice') body += '<div class="opts">' + q.choices.map(function (c, k) {
             var cls = (p && p.a === c ? ' sel' : '') + (done && c === q.answer ? ' ans' : '');
             return '<button type="button" data-k="' + k + '" class="' + cls + '"' + (done ? ' disabled' : '') + '>（' + (k + 1) + '）' + c + '</button>'; }).join('') + '</div>';
-          else body += '<div><input type="text" inputmode="text" autocomplete="off" placeholder="寫答案" value="' + esc(p ? p.a : '') + '"' + (done ? ' disabled' : '') + '></div>';
+          else {
+            var v = esc(p ? p.a : '');
+            if (done) body += '<div><input type="text" value="' + v + '" disabled></div>';
+            else if (q.numeric) body += '<div><input class="pick" type="text" inputmode="none" readonly placeholder="點這裡填數字" value="' + v + '"><button class="typ" type="button">⌨️ 自己打字</button></div>' +
+              '<div class="np" hidden>' + ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '/', '又', '⌫', '清除'].map(function (k) { return '<button type="button" class="' + (/[⌫清]/.test(k) ? 'fn' : '') + '" data-n="' + k + '">' + k + '</button>'; }).join('') + '</div>';
+            else if (q.chips) body += '<div><input class="pick" type="text" readonly placeholder="從下面選一個" value="' + v + '"><button class="typ" type="button">⌨️ 自己打字</button></div>' +
+              '<div class="chips">' + q.chips.map(function (c, k) { return '<button type="button" data-c="' + k + '" class="' + (p && p.a === c ? 'sel' : '') + '">' + esc(c) + '</button>'; }).join('') + '</div>';
+            else body += '<div><input type="text" inputmode="text" autocomplete="off" placeholder="寫答案" value="' + v + '"></div>';
+          }
           if (done) {
             var ca = t === 'tf' ? (q.answer ? '⭕' : '❌') : Array.isArray(q.answer) ? q.answer[0] : q.answer;
             body += '<div class="mark ' + (ok ? 'r' : 'w') + '">' + (ok ? '✔ 答對' : '✘ 答錯' + (p && p.a !== '' && p.a !== undefined ? '' : '（沒作答）') + '　正確答案：' + ca) + '</div>' +
@@ -206,6 +242,27 @@
         });
         var inp = it.querySelector('input');
         if (inp) inp.oninput = function () { picks[i] = { a: inp.value }; left(); };
+        var setV = function (v) { inp.value = v; picks[i] = { a: v }; left(); };
+        it.querySelectorAll('.chips button').forEach(function (b) {
+          b.onclick = function () { setV(q.chips[+b.dataset.c]); it.querySelectorAll('.chips button').forEach(function (x) { x.classList.toggle('sel', x === b); }); };
+        });
+        var np = it.querySelector('.np');
+        if (np) {
+          inp.onclick = function () { box.querySelectorAll('.np').forEach(function (o) { if (o !== np) o.hidden = true; }); np.hidden = !np.hidden; };
+          np.querySelectorAll('button').forEach(function (b) {
+            b.onclick = function () {
+              var k = b.dataset.n, v = inp.value;
+              if (k === '⌫') v = v.slice(0, -1); else if (k === '清除') v = ''; else if (v.length < 14) v += k;
+              setV(v);
+            };
+          });
+        }
+        var typ = it.querySelector('.typ');
+        if (typ) typ.onclick = function () {
+          inp.readOnly = false; inp.removeAttribute('inputmode'); inp.classList.remove('pick'); inp.placeholder = '寫答案';
+          if (np) { np.hidden = true; inp.onclick = null; }
+          typ.remove(); inp.focus();
+        };
       });
       left();
       box.querySelector('[data-submit]').onclick = function () {
