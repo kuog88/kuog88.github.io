@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>萌寵小屋</title>
+<style>
+  :root { --ink: #2b2b2b; --soft: #6b6b6b; --line: #f0dcc0; --main: #e0954a; --ok: #23a55a; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; color: var(--ink);
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background: radial-gradient(circle at 20% 10%, #fff6d8 0, transparent 40%), linear-gradient(160deg, #ffeedd 0%, #e2f4ff 100%);
+    padding: 24px 16px 140px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 16px; }
+  a.back { color: #b5651d; font-weight: 700; text-decoration: none; }
+  h1 { font-size: clamp(30px, 7vw, 44px); color: #b5651d; }
+  h2 { font-size: 20px; }
+  .muted { color: var(--soft); font-size: 14px; line-height: 1.7; }
+  .panel { background: #fff; border: 3px solid var(--line); border-radius: 22px; padding: 16px; display: grid; gap: 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .kpis div { background: #fff8ee; border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; }
+  .kpis b { font-size: 30px; font-weight: 900; color: #b5651d; }
+  .kpis span { font-size: 13px; color: var(--soft); }
+  .pets { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .pet { border: 3px solid var(--line); border-radius: 20px; padding: 14px; display: grid; gap: 8px; justify-items: center; text-align: center; background: #fffdf8; }
+  .pet.on { border-color: var(--main); box-shadow: 0 6px 0 #f3c08a; }
+  .pet img { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 6px 6px rgba(0,0,0,.2)); }
+  .pet.lock img { filter: grayscale(1) brightness(1.2) opacity(.55); }
+  .pet b { font-size: 22px; }
+  .btn { font: inherit; font-weight: 800; font-size: 16px; padding: 9px 20px; border-radius: 999px; border: 3px solid var(--main); background: #fff; color: #b5651d; cursor: pointer; }
+  .btn.main { background: var(--main); color: #fff; box-shadow: 0 4px 0 #b5651d; }
+  .btn:disabled { opacity: .45; cursor: default; box-shadow: none; }
+  .tag { font-size: 13px; font-weight: 800; color: #fff; background: var(--ok); border-radius: 999px; padding: 2px 10px; }
+  .bar { width: 100%; height: 14px; background: #f1e6d6; border-radius: 999px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf5a, #ff8a3d); border-radius: 999px; }
+  .stages { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; font-size: 12px; }
+  .stages span { padding: 2px 8px; border-radius: 999px; background: #f4ece0; color: #8a7a66; }
+  .stages span.now { background: var(--main); color: #fff; font-weight: 800; }
+  .rules li { margin-left: 20px; line-height: 1.9; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; }
+  label.sw { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script src="pets.js"></script>
+<script>
+(function () {
+  var app = document.getElementById('app'), P = window.KGPet;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function day(ts) { var d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function render(msg) {
+    var d = P.get(), R = P.RULE;
+    var act = d.active && P.pet(d.active);
+    app.innerHTML =
+      '<a class="back" href="./">← 回遊戲樂園</a>' +
+      '<div class="panel"><h1>🐾 萌寵小屋</h1>' +
+      '<p class="muted">寫各科的「📝 測驗卷」可以拿積分，用積分在這裡換陪讀萌寵。陪讀萌寵會在每個遊戲頁面散步，點牠一下會跳舞幫你加油！</p>' +
+      (msg ? '<p style="font-weight:800;color:#d94f4f">' + msg + '</p>' : '') +
+      '<div class="kpis"><div><b>' + d.points + '</b><span>⭐ 我的積分</span></div><div><b>' + d.papers + '</b><span>📝 完成的測驗卷</span></div><div><b>' + Object.keys(d.owned).length + ' / ' + P.PETS.length + '</b><span>🐾 擁有的萌寵</span></div></div>' +
+      (act ? '<label class="sw"><input type="checkbox" id="walk"' + (d.walk ? ' checked' : '') + '>讓 ' + esc(act.name) + ' 在遊戲頁面散步</label>' : '') + '</div>' +
+      '<div class="panel"><h2>萌寵們</h2><div class="pets">' + P.PETS.map(function (p) {
+        var o = d.owned[p.id], s = o ? P.stageOf(o.papers) : 1, st = p.stages[s - 1] || p.stages[0];
+        var into = o ? (s >= R.maxStage ? R.papersPerStage : o.papers % R.papersPerStage) : 0;
+        return '<div class="pet' + (o ? '' : ' lock') + (d.active === p.id ? ' on' : '') + '">' +
+          '<img src="' + P.url(st.img) + '" alt="' + esc(p.name) + '">' +
+          '<b>' + esc(p.name) + (s >= 4 ? ' 👑' : '') + '</b>' +
+          (d.active === p.id ? '<span class="tag">陪讀中</span>' : '') +
+          '<p class="muted">' + esc(p.desc) + '</p>' +
+          (o ? '<div class="stages">' + P.STAGE_NAME.map(function (n, k) { return '<span class="' + (k === s - 1 ? 'now' : '') + '">' + n + '</span>'; }).join('') + '</div>' +
+            '<div class="bar"><i style="width:' + (into / R.papersPerStage * 100) + '%"></i></div>' +
+            '<p class="muted">' + (s >= R.maxStage ? '已經是最強的傳說型態！' : '再完成 ' + (R.papersPerStage - into) + ' 張測驗卷就會進化') + '</p>' +
+            (d.active === p.id ? '' : '<button class="btn main" data-act="' + p.id + '">選牠陪我讀書</button>')
+            : '<button class="btn main" data-buy="' + p.id + '"' + (d.points < p.price ? ' disabled' : '') + '>⭐ ' + p.price + ' 積分換牠</button>' +
+              (d.points < p.price ? '<p class="muted">還差 ' + (p.price - d.points) + ' 分</p>' : '')) +
+          '</div>';
+      }).join('') + '</div></div>' +
+      '<div class="panel"><h2>怎麼拿積分？</h2><ul class="rules muted">' +
+        '<li>進入各科的年級頁，按「📝 測驗卷」寫一張（10 題）。</li>' +
+        '<li>每答對 1 題得 ' + R.perCorrect + ' 分，全部答對再加 ' + R.perfectBonus + ' 分。</li>' +
+        '<li>答對 ' + Math.round(R.passRate * 100) + '% 以上算「完成一張」。陪讀中的萌寵每完成 ' + R.papersPerStage + ' 張就會進化一次，最多進化成「' + P.STAGE_NAME[R.maxStage - 1] + '」。</li>' +
+        '<li>積分和萌寵存在這台裝置的瀏覽器裡，換手機或清除瀏覽資料就不會帶過去。</li></ul></div>' +
+      (d.log.length ? '<div class="panel"><h2>最近寫的測驗卷</h2><table><tr><th>日期</th><th>測驗卷</th><th>答對</th><th>積分</th></tr>' +
+        d.log.slice(0, 15).map(function (l) { return '<tr><td>' + day(l.ts) + '</td><td>' + esc(l.title) + '</td><td>' + l.right + '/' + l.total + '</td><td>+' + l.gain + '</td></tr>'; }).join('') + '</table></div>' : '');
+    app.querySelectorAll('[data-buy]').forEach(function (b) { b.onclick = function () { var p = P.pet(b.dataset.buy); if (P.buy(p.id)) render('🎉 歡迎 ' + p.name + ' 加入！牠會開始在遊戲頁面散步，點牠一下試試看。'); }; });
+    app.querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { P.setActive(b.dataset.act); render(); }; });
+    var w = document.getElementById('walk'); if (w) w.onchange = function () { P.setWalk(w.checked); };
+  }
+  render();
+  window.addEventListener('storage', function () { render(); });
+})();
+</script>
+<script src="https://kuog88.github.io/bgm.js" defer></script>
+</body>
+</html>

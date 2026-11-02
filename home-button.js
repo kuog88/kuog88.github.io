@@ -32,6 +32,14 @@
     rs.src = 'https://kuog88.github.io/parent-report.js';
     document.head.appendChild(rs);
   }
+  // 陪讀萌寵與測驗卷（英文由另一邊獨立管理，不載入）
+  if (!/\/galaxy-english\//.test(location.pathname)) {
+    ['pets.js', 'kg-exam.js'].forEach(function (f) {
+      var s = document.createElement('script');
+      s.src = 'https://kuog88.github.io/' + f;
+      document.head.appendChild(s);
+    });
+  }
 
   // ---------- 浮動按鈕（遊戲樂園、家長報表、音樂）避開遊戲的按鈕 ----------
   var FLOAT = ['kg-hub-btn', 'kg-rep-btn', 'kg-bgm-btn'];
