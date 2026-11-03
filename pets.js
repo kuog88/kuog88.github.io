@@ -302,6 +302,7 @@
           api.unlock(p.id);
         }
         api.choose(p.id); close();
+        if (typeof window.onKGPetChange === 'function') window.onKGPetChange();
         setTimeout(function () { if (el) say('我是' + p.name + '！我們一起去闖關吧！', 3000); }, 500);
       };
     });

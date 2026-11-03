@@ -89,6 +89,7 @@
 </style>
 </head>
 <body>
+  <div id="kgp-root" style="align-self:flex-end;margin:-28px 0 10px"></div>
   <h1>🏫 國小課業複習遊戲</h1>
   <p class="sub">選一個科目，開始闖關吧！</p>
   <p class="note">（請依照各學校教學進度內容，調整單元闖關順序）</p>
@@ -124,7 +125,7 @@
   <div class="duo">
     <a class="donate report" href="report.html">📊 家長報表</a>
     <a class="donate report wb" href="wrongbook.html">📕 錯題本</a>
-    <button type="button" class="donate report pet" onclick="window.KGPet && KGPet.picker()">🐾 換萌寵</button>
+    <button type="button" id="pet-btn" class="donate report pet" onclick="window.KGPet && KGPet.picker()">🐾 選一隻萌寵陪我</button>
   </div>
   <button type="button" class="donate" id="donate">💰 金主爸爸贊助點這裡</button>
   <a class="feedback" href="https://docs.google.com/forms/d/e/1FAIpQLSf0vTXtqv25ZqDAn1FIAj6_xffuh6t8_2NYjqkmi0ryZiveIA/viewform" target="_blank" rel="noopener">💬 意見回饋</a>
@@ -142,10 +143,13 @@
   </script>
 
   <footer>國文／社會／自然／數學／英文 · 遊戲製作者：基爸</footer>
+<script src="kg-profile.js"></script>
+<script>KGProfile.chip(document.getElementById('kgp-root'));</script>
 <script src="pets.js" defer></script>
 <script>
-  // 第一次來先挑一隻陪伴萌寵，再選科目
-  window.addEventListener('load', function () { if (!window.KGPet) return; var d = KGPet.get(); if (!d.active && !d.skipPick) KGPet.picker(true); });
+  // 萌寵不自動跳出，按鈕顯示目前的萌寵
+  window.onKGPetChange = function () { if (!window.KGPet) return; var d = KGPet.get(), b = document.getElementById('pet-btn'), p = d.active && KGPet.pet(d.active); if (b) b.textContent = p ? '🐾 我的萌寵：' + p.name : '🐾 選一隻萌寵陪我'; };
+  window.addEventListener('load', window.onKGPetChange);
 </script>
 <script src="https://kuog88.github.io/bgm.js" defer></script>
 </body>
