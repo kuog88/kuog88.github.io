@@ -72,6 +72,7 @@
     '#kgx-panel .card{text-align:left;font:inherit;color:#222;background:#fff;border:2px solid #d8c8ad;border-radius:14px;padding:12px 14px;cursor:pointer;display:grid;gap:4px;box-shadow:0 3px 0 #d8c8ad}' +
     '#kgx-panel .card:hover{border-color:#8b5e34}' +
     '#kgx-panel .card b{font-size:17px}#kgx-panel .card small{color:#666}' +
+    '#kgx-panel .hist{display:grid;gap:6px}#kgx-panel .hrow{font:inherit;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left;background:#fffdf7;border:2px solid #e6dccb;border-radius:12px;padding:8px 12px;cursor:pointer;color:#222}#kgx-panel .hrow:hover{border-color:#8b5e34}#kgx-panel .hrow span{color:#666;font-size:14px}#kgx-panel .hrow .sc2{color:#b07a00;font-weight:800}' +
     '#kgx-panel .card .best{color:#b07a00;font-weight:800}';
 
   function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -104,6 +105,18 @@
   function typeOf(q) { return q.type || (q.choices ? 'choice' : typeof q.answer === 'boolean' ? 'tf' : 'fill'); }
   function starsOf(score) { return score >= 100 ? 2 : score >= 90 ? 1.5 : score >= 80 ? 1 : 0; }
   function starHTML(n) { return n ? '★'.repeat(Math.floor(n)) + (n % 1 ? '<span style="display:inline-block;width:.5em;overflow:hidden;vertical-align:bottom">★</span>' : '') : '☆'; }
+  var HKEY = 'kg-exam-hist-v1', KEEP = 5;
+  function loadHist() { try { return JSON.parse(localStorage.getItem(HKEY)) || {}; } catch (e) { return {}; } }
+  function saveHist(h) {
+    for (var t = 0; t < 40; t++) {
+      try { localStorage.setItem(HKEY, JSON.stringify(h)); return; } catch (e) {
+        // 空間不夠：刪掉全部紀錄裡最舊的一張再試
+        var ok = '', oi = -1, ots = Infinity;
+        Object.keys(h).forEach(function (k) { (h[k] || []).forEach(function (r, i) { if (r.ts < ots) { ots = r.ts; ok = k; oi = i; } }); });
+        if (oi < 0) return; h[ok].splice(oi, 1); if (!h[ok].length) delete h[ok];
+      }
+    }
+  }
   function gameId() { return location.pathname.replace(/index\.html$/, '').split('/').filter(Boolean).slice(0, 2).join('/'); }
   function loadBest() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
   function saveBest(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
@@ -134,13 +147,15 @@
     return out;
   }
 
-  function open(paper, bankAll, grade) {
+  function open(paper, bankAll, grade, replay) {
     if (document.getElementById('kg-exam')) return;
     if (!css.parentNode) document.head.appendChild(css);
+    if (replay) return openReplay(paper, bankAll, grade, replay);
     var units = paper.units && paper.units.length ? paper.units : null;
     var bank = (bankAll || []).filter(function (b) { return !units || units.indexOf(unitOf(b)) >= 0; });
     var count = paper.count || 45;
     var secs = build(bank, count), all = [];
+    if (paper.__rec) { secs = {}; SEC.forEach(function (s) { secs[s[0]] = paper.__rec.secs[s[0]] || []; }); }
     var pool = [];   // 範圍內所有填充題的答案，當詞語框的誘答
     bank.forEach(function (b) {
       var q = typeof b === 'function' ? b() : b;
@@ -168,7 +183,8 @@
     // 數學試卷附浮動計算機（試卷設定 calculator: false 可關掉）
     var useCalc = paper.calculator !== undefined ? paper.calculator : /\/math5a-lab\//.test(location.pathname);
     document.body.appendChild(box);
-    var started = Date.now(), picks = [], lastWallet = null;
+    var started = Date.now(), picks = [], lastWallet = null, replayRec = paper.__rec || null;
+    if (replayRec) { started = replayRec.started || replayRec.ts; picks = replayRec.picks.map(function (p) { return { a: p.a, ok: p.ok }; }); }
     function close() { box.remove(); var cc = document.getElementById('kgx-calc'); if (cc) cc.remove(); document.documentElement.style.overflow = ''; }
     if (useCalc) addCalc();
     document.documentElement.style.overflow = 'hidden';
@@ -181,7 +197,7 @@
         '<h1>' + esc(grade || '') + '</h1><div class="sub">' + esc(title) + '　共 ' + all.length + ' 題，每題 ' + (Math.round(1000 / all.length) / 10) + ' 分</div>' +
         '<div class="name">班級：<span></span>　姓名：<span></span>　得分：<span style="color:#d22;font-weight:800;text-align:center">' + (done ? score : '') + '</span></div>';
       if (done) {
-        var mins = Math.max(1, Math.round((Date.now() - started) / 60000));
+        var mins = Math.max(1, Math.round(((replayRec ? replayRec.ts : Date.now()) - started) / 60000));
         h += '<div class="res"><div class="sc">' + score + '</div><div class="stars">' + starHTML(stars) + '</div>' +
           '<div>答對 ' + right + ' / ' + all.length + ' 題・作答約 ' + mins + ' 分鐘</div>' +
           '<div style="color:#666">' + (stars === 2 ? '滿分！月考準備好了！' : stars === 1.5 ? '很棒！把錯的題目再看一次就更穩了。' : stars === 1 ? '及格了！錯的地方要訂正喔。' : '還不到 80 分，先看錯的題目和解說，再寫一張吧！') + '</div>' +
@@ -228,8 +244,8 @@
       box.querySelector('.x').onclick = function () { if (done || confirm('還沒交卷，確定要離開嗎？作答內容不會保存。')) close(); };
       if (done) {
         box.querySelector('[data-close]').onclick = close;
-        box.querySelector('[data-again]').onclick = function () { close(); open(paper, bankAll, grade); };
-        box.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { render(true, b.dataset.f === 'wrong'); box.scrollTop = 0; }; });
+        box.querySelector('[data-again]').onclick = function () { var pp = Object.assign({}, paper); delete pp.__rec; close(); open(pp, bankAll, grade); };
+        box.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { render(true, b.dataset.f === 'wrong'); box.scrollTop = 0; if (replayRec) { var tp = box.querySelector('.top b'); if (tp) tp.textContent = '📄 ' + full + '（重看寫過的試卷）'; } }; });
         return;
       }
       var left = function () { var c = all.filter(function (q, i) { return !picks[i] || picks[i].a === '' || picks[i].a === undefined; }).length; box.querySelector('#kge-left').textContent = c ? '還有 ' + c + ' 題沒寫' : '全部寫完了！'; };
@@ -293,10 +309,16 @@
       var d = loadBest(), k = gameId() + '|' + title, o = d[k] || { n: 0 };
       o.n++; o.last = score; o.ts = Date.now(); if (!(o.best >= score)) o.best = score; o.stars = starsOf(o.best);
       d[k] = o; saveBest(d);
+      var hist = loadHist(), rec = { ts: Date.now(), started: started, title: title, grade: grade || '', score: score, stars: stars, right: right, total: all.length,
+        secs: {}, picks: picks.map(function (p) { return { a: p.a, ok: p.ok }; }) };
+      SEC.forEach(function (s) { rec.secs[s[0]] = (secs[s[0]] || []).map(function (q) { return { type: q.type, unit: q.unit, q: q.q, choices: q.choices, answer: q.answer, explain: q.explain, unit2: q.unit2, numeric: q.numeric, chips: q.chips }; }); });
+      (hist[k] = hist[k] || []).unshift(rec); if (hist[k].length > KEEP) hist[k].length = KEEP;
+      saveHist(hist);
       render(true, false); box.scrollTop = 0;
       if (window.__kgExamMounted) window.__kgExamMounted.forEach(function (f) { f(); });
     }
-    render(false);
+    if (replayRec) { render(true, false); var tp = box.querySelector('.top b'); if (tp) tp.textContent = '📄 ' + full + '（' + new Date(replayRec.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' 寫的）'; }
+    else render(false);
   }
 
 
@@ -378,10 +400,27 @@
     return c;
   }
 
+
+  function openReplay(paper, bankAll, grade, rec) {
+    var pp = Object.assign({}, paper, { __rec: rec });
+    return open(pp, bankAll, grade);
+  }
+
   // 在年級頁畫出「月考測驗卷」欄位
   function mount(el, B) {
     if (!el || !B) return;
     if (!css.parentNode) document.head.appendChild(css);
+    function histHTML() {
+      var h = loadHist(), rows = [];
+      B.papers.forEach(function (p) { var k = gameId() + '|' + p.title; (h[k] || []).forEach(function (r, i) { rows.push({ k: k, i: i, r: r }); }); });
+      if (!rows.length) return '';
+      rows.sort(function (a, b) { return b.r.ts - a.r.ts; });
+      return '<h3 style="margin-top:6px">📄 寫過的試卷</h3><div style="color:#666;font-size:14px">點一下就能重看當時的作答、正確答案和解說（每份保留最近 ' + KEEP + ' 次）。</div><div class="hist">' +
+        rows.slice(0, 15).map(function (x) {
+          var t = new Date(x.r.ts);
+          return '<button class="hrow" type="button" data-h="' + esc(x.k) + '#' + x.i + '"><span>' + (t.getMonth() + 1) + '/' + t.getDate() + ' ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + '</span><b>' + esc(x.r.title) + '</b><span class="sc2">' + x.r.score + ' 分 ' + starHTML(x.r.stars) + '</span></button>';
+        }).join('') + '</div>';
+    }
     function draw() {
       var d = loadBest();
       el.innerHTML = '<div id="kgx-panel"><h3>📝 月考測驗卷</h3><div style="color:#666;font-size:14px">正式的考前複習試卷，每張 40～50 題（是非、選擇、填充），題目每次會換。80 分 ★、90 分 ★½、100 分 ★★。</div>' +
@@ -389,8 +428,16 @@
           var o = d[gameId() + '|' + p.title];
           return '<button class="card" type="button" data-p="' + i + '"><b>' + esc(p.title) + '</b><small>' + (p.count || 45) + ' 題' + (p.units && p.units.length ? '・' + p.units.length + ' 個單元' : '') + '</small>' +
             (o ? '<span class="best">最佳 ' + o.best + ' 分 ' + starHTML(o.stars) + '　（寫過 ' + o.n + ' 次）</span>' : '<small>還沒寫過</small>') + '</button>';
-        }).join('') + '</div></div>';
+        }).join('') + '</div>' + histHTML() + '</div>';
       el.querySelectorAll('[data-p]').forEach(function (b) { b.onclick = function () { open(B.papers[+b.dataset.p], B.bank, B.grade); }; });
+      el.querySelectorAll('[data-h]').forEach(function (b) {
+        b.onclick = function () {
+          var x = b.dataset.h.split('#'), rec = (loadHist()[x[0]] || [])[+x[1]];
+          if (!rec) return;
+          var paper = B.papers.filter(function (p) { return gameId() + '|' + p.title === x[0]; })[0] || { title: rec.title };
+          open(paper, B.bank, rec.grade || B.grade, rec);
+        };
+      });
     }
     draw();
     (window.__kgExamMounted = window.__kgExamMounted || []).push(draw);
