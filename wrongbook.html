@@ -101,7 +101,7 @@
     var groups = {}, order = [];
     shown.forEach(function (it) { if (!groups[it.id]) { groups[it.id] = []; order.push(it.id); } groups[it.id].push(it); });
     app.innerHTML =
-      '<a class="back" href="./">← 回遊戲樂園</a>' +
+      '<div class="row" style="justify-content:space-between"><a class="back" href="./">← 回遊戲樂園</a><a class="btn small" href="/math5a-lab/fix-lab/" style="border-color:#4a5568;color:#4a5568">🔧 數學錯題送去故障修復局</a></div>' +
       '<div class="panel"><h1>📕 錯題本</h1>' +
       '<p class="muted">這裡收集了在這台裝置上答錯過的題目。先想一想，再按「看答案」。之後在遊戲裡答對同一題，就會自動變成「已訂正」。</p>' +
       '<div class="kpis"><div><b style="color:var(--red)">' + todo.length + '</b><span>還要訂正</span></div><div><b style="color:var(--ok)">' + done + '</b><span>已訂正</span></div></div>' +

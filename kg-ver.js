@@ -28,6 +28,7 @@
     '#kgv-bar .lb{font-weight:800}#kgv-bar .grp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}' +
     '#kgv-bar button{font:inherit;font-size:15px;font-weight:700;padding:6px 12px;border-radius:999px;border:2px solid #d8ccb8;background:#fff;color:#2b2b2b;cursor:pointer;min-height:38px}' +
     '#kgv-bar button.on{color:#fff;border-color:transparent}' +
+    '#kgv-bar a.fix{margin-left:auto;font-weight:800;font-size:15px;padding:6px 12px;border-radius:999px;background:#4a5568;color:#fff;text-decoration:none}' +
     '#kgv-bar button.nani.on{background:#e85d4a}#kgv-bar button.kang.on{background:#2f80ed}#kgv-bar button.han.on{background:#23a55a}#kgv-bar button.rg.on{background:#8b5e34}' +
     '#kgv-wiz{max-width:860px;margin:0 auto;display:grid;gap:14px;text-align:left}' +
     '#kgv-wiz .pn{background:#fff;border:3px solid #eadfce;border-radius:20px;padding:16px;display:grid;gap:10px}' +
@@ -58,7 +59,8 @@
       var sub = { m1: list.length ? '第 ' + list[0].no + '～' + list[half - 1].no + ' 單元' : '', m2: list.length > half ? '第 ' + list[half].no + '～' + list[list.length - 1].no + ' 單元' : '', all: '全部單元' };
       el.innerHTML = '<div id="kgv-bar"><span class="lb">📘 ' + GR[BOOK.grade] + '年級' + BOOK.sem + '學期</span>' +
         '<span class="grp">版本：' + ['nani', 'kang', 'han'].filter(function (v) { return BOOK.versions[v]; }).map(function (v) { return '<button type="button" class="' + v + (v === c.version ? ' on' : '') + '" data-v="' + v + '">' + PUB[v] + '</button>'; }).join('') + '</span>' +
-        '<span class="grp">範圍：' + ['m1', 'm2', 'all'].map(function (r) { return '<button type="button" class="rg' + (r === c.range ? ' on' : '') + '" data-r="' + r + '" title="' + esc(sub[r]) + '">' + RANGE[r] + '</button>'; }).join('') + '</span></div>';
+        '<span class="grp">範圍：' + ['m1', 'm2', 'all'].map(function (r) { return '<button type="button" class="rg' + (r === c.range ? ' on' : '') + '" data-r="' + r + '" title="' + esc(sub[r]) + '">' + RANGE[r] + '</button>'; }).join('') + '</span>' +
+        (BOOK.subject === 'math' ? '<a class="fix" href="/math5a-lab/fix-lab/">🔧 故障修復局</a>' : '') + '</div>';
       el.querySelectorAll('[data-v]').forEach(function (b) { b.onclick = function () { set({ version: b.dataset.v, grade: BOOK.grade, sem: BOOK.sem }, BOOK.subject); draw(); onChange && onChange(); }; });
       el.querySelectorAll('[data-r]').forEach(function (b) { b.onclick = function () { set({ range: b.dataset.r }, BOOK.subject); draw(); onChange && onChange(); }; });
     }
