@@ -7,7 +7,7 @@
 //   沒填 anims 的階段會用內建的跳跳、轉圈、愛心動畫。
 (function () {
   if (window.KGPet) return;
-  var BASE = location.hostname === 'kuog88.github.io' ? 'https://kuog88.github.io/' : '/kuog88.github.io/';
+  var BASE = /^(localhost|127.0.0.1)$/.test(location.hostname) ? '/kuog88.github.io/' : 'https://kuog88.github.io/';
   var KEY = 'kg-pet-v1';
 
   // ---------- 規則 ----------

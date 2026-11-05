@@ -8,7 +8,7 @@
   if (window.KGReport) return;
   var KEY = 'kg-report-v1', MAX_WRONG = 300;
   // 本機測試時（把 publish/ 當網站根目錄）報表頁在 /kuog88.github.io/
-  var HUB = location.hostname === 'kuog88.github.io' ? 'https://kuog88.github.io/' : '/kuog88.github.io/';
+  var HUB = /^(localhost|127.0.0.1)$/.test(location.hostname) ? '/kuog88.github.io/' : 'https://kuog88.github.io/';
   var SUBJ = { 'math5a-lab': '數學', 'science5-quest': '自然', 'social-puzzle': '社會', 'galaxy-english': '英文' };
 
   // 遊戲 id：網址的 repo + 年級資料夾，例如 math5a-lab/grade3、social-puzzle/grade3.html
