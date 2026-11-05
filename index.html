@@ -79,6 +79,13 @@
   .duo + .donate { margin-top: 22px; }
   .feedback { margin-top: 18px; padding: 8px 20px; border-radius: 999px; background: #fff; color: #6c5ce7; border: 2px solid #6c5ce7; font-weight: 700; font-size: 16px; text-decoration: none; }
   .feedback:hover, .feedback:focus-visible { background: #6c5ce7; color: #fff; outline: none; }
+  .sponsor { margin-top: 26px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: #b07a00; }
+  .sponsor .kneel { font-size: 72px; line-height: 1; display: inline-block; animation: kowtow 1.6s ease-in-out infinite; transform-origin: 50% 90%; filter: drop-shadow(0 4px 4px rgba(0,0,0,.15)); }
+  .sponsor .txt { font-weight: 900; font-size: 20px; padding: 6px 18px; border-radius: 999px; background: #fff; border: 3px solid #f5b800; box-shadow: 0 5px 0 #f5b800; }
+  .sponsor:hover .txt, .sponsor:focus-visible .txt { background: #fff7d6; }
+  .sponsor:focus-visible { outline: none; }
+  @keyframes kowtow { 0%, 60%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-18deg) translateY(4px); } }
+  @media (prefers-reduced-motion: reduce) { .sponsor .kneel { animation: none; } }
   #qr { margin: auto; border: none; border-radius: 24px; padding: 14px; max-width: min(92vw, 440px); background: #fff; }
   #qr::backdrop { background: rgba(0, 0, 0, .55); }
   #qr img { display: block; width: 100%; height: auto; border-radius: 14px; }
@@ -127,22 +134,12 @@
     <a class="donate report wb" href="wrongbook.html">📕 錯題本</a>
     <button type="button" id="pet-btn" class="donate report pet" onclick="window.KGPet && KGPet.picker()">🐾 選一隻萌寵陪我</button>
   </div>
-  <button type="button" class="donate" id="donate">💖 請到 IG 贊助我</button>
+  <!-- 贊助：點跪拜小人就到綠界付款頁 -->
+  <a class="sponsor" href="https://p.ecpay.com.tw/6642C01" target="_blank" rel="noopener" title="金主贊助（綠界付款頁）">
+    <span class="kneel" aria-hidden="true">🙇</span>
+    <span class="txt">金主贊助》</span>
+  </a>
   <a class="feedback" href="https://docs.google.com/forms/d/e/1FAIpQLSf0vTXtqv25ZqDAn1FIAj6_xffuh6t8_2NYjqkmi0ryZiveIA/viewform" target="_blank" rel="noopener">💬 意見回饋</a>
-  <dialog id="qr" aria-label="贊助 QR Code">
-    <p style="text-align:center;font-weight:800;font-size:18px;margin:0 0 10px;color:#5b4ce0">請到 IG 贊助我 💖</p>
-    <a href="https://www.instagram.com/xt4photo?obrf=Z3o2Z2Vna25sa2Vw&amp;utm_source=qr" target="_blank" rel="noopener" title="點一下打開 IG"><img src="donate-qr.jpg?v=ig" alt="IG：@xt4photo 的 QR Code（點一下打開 IG）" width="880" height="1512"></a>
-    <a href="https://www.instagram.com/xt4photo?obrf=Z3o2Z2Vna25sa2Vw&amp;utm_source=qr" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;font-weight:800;color:#5b4ce0">👉 點圖片或這裡打開 IG：@xt4photo</a>
-    <button type="button" class="close">關閉</button>
-  </dialog>
-  <script>
-    (function () {
-      var d = document.getElementById('qr');
-      document.getElementById('donate').onclick = function () { d.showModal(); };
-      d.querySelector('.close').onclick = function () { d.close(); };
-      d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
-    })();
-  </script>
 
   <footer>國文／社會／自然／數學／英文 · 遊戲製作者：基爸</footer>
 <script src="kg-profile.js"></script>
