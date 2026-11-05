@@ -396,6 +396,14 @@
     }
   }
   setInterval(dodge, 500);
+  // 本機測試時找不到 /kuog88.github.io/ 的圖片，就改用正式網站的圖
+  addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG' && t.closest && t.closest('#kg-pet,#kg-pick')) {
+      var s = t.getAttribute('src') || '';
+      if (s.indexOf('/kuog88.github.io/') === 0) t.src = 'https://kuog88.github.io/' + s.slice(18);
+    }
+  }, true);
   window.addEventListener('storage', function (e) { if (e.key === KEY) refresh(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh); else refresh();
 })();
