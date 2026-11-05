@@ -25,10 +25,21 @@
     { id: 'green', name: '嫩芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40, star: 2,
       stages: [{ img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }] },
     { id: 'orange', name: '紫紫', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40, star: 2,
-      stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] }
+      stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] },
+    // 贊助解鎖的萌寵：有 6 種姿勢（poses），會招手、寫作業、比讚、想事情、歡呼、睡覺，而且一直誇獎小朋友
+    { id: 'honey', name: '蜜蜜', desc: '頭上長小芽、背著透明翅膀的黃毛球，最愛誇獎認真的小朋友！', price: 0, star: 0,
+      sponsor: '💛 贊助已達 1000 元解鎖',
+      poses: { wave: 'pets/honey/wave.webp', write: 'pets/honey/write.webp', thumb: 'pets/honey/thumb.webp',
+        think: 'pets/honey/think.webp', cheer: 'pets/honey/cheer.webp', sleep: 'pets/honey/sleep.webp' },
+      praise: ['你好厲害喔！蜜蜜好崇拜你～', '哇！你答得又快又準！', '你是蜜蜜心中的第一名！', '認真的你閃閃發亮✨',
+        '給你一個大大的讚！👍', '蜜蜜最喜歡看你努力的樣子了～', '答錯也沒關係，肯動腦就很了不起！', '你的頭腦轉得好快喔！',
+        '一題一題慢慢來，你做得超好！', '我要把你的努力告訴全世界！', '哇～你又進步了耶！', '你好專心喔，好酷！',
+        '有你陪我讀書，蜜蜜好開心～', '蜜蜜幫你搧搧翅膀打氣！加油！', '你比昨天的自己更棒了！', '這麼難你都會，太強了吧！',
+        '你的字寫得好認真喔～', '蜜蜜要送你一朵小花🌼', '你是最棒的小學霸！', '慢慢想沒關係，你一定想得出來！'],
+      stages: [{ img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }] }
   ];
   // 挑選視窗裡「還沒開放」的剪影（借現有圖片變形後塗黑，看不出是誰）
-  var LOCKED = ['pets/fluffy-orange.webp', 'pets/fluffy-blue.webp', 'pets/fluffy-green.webp'];
+  var LOCKED = ['pets/fluffy-orange.webp', 'pets/fluffy-green.webp'];
   var LOCK_TF = ['transform:scaleX(-1) scaleY(1.12)', 'transform:scale(0.9,1.15) rotate(-8deg)', 'transform:scaleX(-1.1) rotate(6deg)'];
   var CHEER = ['你好棒！', '再闖一關吧！', '我陪你一起加油！', '答錯沒關係，再想想～', '今天也很努力喔！', '我們一起變厲害！',
     '慢慢來，看清楚題目再作答！', '錯的題目最有價值，訂正完就學會了！', '休息一下眼睛，再繼續衝！', '你比昨天的自己更厲害了！',
@@ -132,6 +143,11 @@
     '#kg-pet.a-wiggle img{animation:kgpWiggle .5s ease-in-out 3}' +
     '#kg-pet.a-heart img{animation:kgpPop .6s ease-in-out 2}' +
     '#kg-pet.kg-dodge{opacity:.3;pointer-events:none}' +
+    '#kg-pet.p-wave img{animation:kgpWave .45s ease-in-out 5}' +
+    '#kg-pet.p-cheer img{animation:kgpJump .6s ease-in-out 2}' +
+    '#kg-pet.p-sleep img{animation:kgpBreath 2.6s ease-in-out infinite}' +
+    '@keyframes kgpWave{0%,100%{rotate:0deg}50%{rotate:-9deg}}' +
+    '@keyframes kgpBreath{0%,100%{scale:1}50%{scale:1.04 0.97}}' +
     '@keyframes kgpBob{0%,100%{translate:0 0}50%{translate:0 -6px}}' +
     '@keyframes kgpJump{0%,100%{translate:0 0}40%{translate:0 -38px}60%{translate:0 -38px}}' +
     '@keyframes kgpSpin{to{rotate:360deg}}' +
@@ -165,7 +181,10 @@
       document.body.appendChild(el);
       wander();
       if (sd.visitor) { el.hidden = true; schedule(8000 + Math.random() * 10000, true); }
-      else chatter();
+      else {
+        chatter();
+        if (sd.p.poses) setTimeout(function () { if (el && !el.hidden) { pose('wave', 0); say(pick(['嗨～蜜蜜來陪你囉！', '哈囉！今天也一起加油吧！', '蜜蜜好想你喔～'])); } }, 1200);
+      }
     }
     if (!sd.visitor && el.hidden) { clearTimeout(visitT); el.hidden = false; chatter(); }
     var key = sd.p.id + sd.s;
@@ -199,16 +218,54 @@
     clearTimeout(sayT); bubble.textContent = t; bubble.classList.add('on');
     sayT = setTimeout(function () { bubble.classList.remove('on'); }, ms || 2600);
   }
+  // ---------- 有多種姿勢的萌寵（蜜蜜） ----------
+  var poseT = null, sleeping = false, idleT = null;
+  function hasPoses() { var sd = stageData(); return sd && sd.p.poses ? sd : null; }
+  // 換姿勢 ms 毫秒後回到招手（ms 為 0 表示停在這個姿勢）
+  function pose(name, ms) {
+    var sd = hasPoses(); if (!sd || !el) return;
+    clearTimeout(poseT);
+    el.classList.remove('p-wave', 'p-cheer', 'p-sleep');
+    img.src = url(sd.p.poses[name] || sd.st.img);
+    if (name === 'wave' || name === 'cheer' || name === 'sleep') { void el.offsetWidth; el.classList.add('p-' + name); }
+    if (ms) poseT = setTimeout(function () { if (!sleeping) pose('wave', 0); }, ms);
+  }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function poseTalk(sd) {
+    var r = Math.random();
+    if (r < 0.2) {          // 笑話：先想一想，再歡呼說答案
+      var j = pick(JOKE); pose('think', 0); say(j[0], 2600);
+      setTimeout(function () { if (el && !sleeping) { pose('cheer', 3400); say(j[1], 3200); } }, 2700);
+    } else if (r < 0.32) { pose('write', 4000); say(pick(['我也跟你一起寫作業～', '我們一起把題目看清楚！', '蜜蜜也在認真做筆記喔！']), 3000); }
+    else { pose(pick(['thumb', 'cheer', 'wave', 'thumb']), 3200); say(pick(sd.p.praise), 3000); }
+  }
+  // 太久沒動就睡著，小朋友一動就醒來
+  function idleReset() {
+    clearTimeout(idleT);
+    if (sleeping) {
+      sleeping = false;
+      if (hasPoses() && el && !el.hidden) { pose('cheer', 2600); say(pick(['啊！我醒了！你還在努力耶，好棒！', '蜜蜜睡飽了！我們繼續加油～']), 3000); }
+    }
+    idleT = setTimeout(function () {
+      if (!hasPoses() || !el || el.hidden) return;
+      sleeping = true; pose('sleep', 0); say('呼…呼…（點我叫醒蜜蜜）', 4000);
+    }, 120000);
+  }
+  ['pointerdown', 'keydown'].forEach(function (t) { addEventListener(t, idleReset, true); });
+  idleReset();
+
   // 隨機說打氣的話或講一個短笑話
   function talk() {
     if (!el || el.hidden) return;
+    var sp = hasPoses();
+    if (sp) { if (!sleeping) poseTalk(sp); return; }
     if (Math.random() < 0.45) {
       var j = JOKE[Math.floor(Math.random() * JOKE.length)];
       say(j[0], 2600); setTimeout(function () { if (el) say(j[1], 3200); }, 2700);
     } else say(CHEER[Math.floor(Math.random() * CHEER.length)]);
   }
   var talkT = null, visitT = null;
-  function chatter() { clearTimeout(talkT); talkT = setTimeout(function () { talk(); chatter(); }, 16000 + Math.random() * 12000); }
+  function chatter() { clearTimeout(talkT); var fast = !!hasPoses(); talkT = setTimeout(function () { talk(); chatter(); }, fast ? 11000 + Math.random() * 8000 : 16000 + Math.random() * 12000); }
   // 訪客模式：出現 40～70 秒，離開 1.5～3 分鐘，再換一隻隨機出現
   function schedule(wait, show) {
     clearTimeout(visitT);
@@ -231,6 +288,15 @@
   // 點一下：輪流播放動畫（自訂的動圖，或內建動畫）
   function play() {
     var sd = stageData(); if (!sd || playing) return;
+    if (sd.p.poses) {       // 蜜蜜：點一下就換姿勢、誇獎＋冒愛心
+      playing = true; sleeping = false;
+      var seq = ['cheer', 'thumb', 'wave', 'think'], nm = seq[animIdx++ % seq.length];
+      pose(nm, 2600);
+      say(nm === 'think' ? '嗯…你在想什麼呢？你一定想得出來！' : pick(sd.p.praise), 2800);
+      ['💛', '✨', '💛'].forEach(function (e, i) { setTimeout(function () { var f = document.createElement('span'); f.className = 'fx'; f.textContent = e; f.style.marginLeft = (i - 1) * 18 + 'px'; el.appendChild(f); setTimeout(function () { f.remove(); }, 1300); }, i * 180); });
+      setTimeout(function () { playing = false; }, 1500);
+      return;
+    }
     playing = true;
     var anims = sd.st.anims && sd.st.anims.length ? sd.st.anims : null;
     var done = function () { playing = false; el.classList.remove('a-jump', 'a-spin', 'a-wiggle', 'a-heart'); img.src = url(sd.st.img); };
@@ -275,6 +341,7 @@
       '#kg-pick .pc.need img{filter:grayscale(1) opacity(.55);animation:none}' +
       '#kg-pick .pc.can .need{color:#fff;background:#e0954a}' +
       '#kg-pick .pc.shake{animation:kgpShake .4s}' +
+      '#kg-pick .pc .spn{font-size:14px;font-weight:900;color:#8a5a00;background:linear-gradient(90deg,#ffe58a,#ffd34d);border:2px solid #f5b800;border-radius:999px;padding:3px 12px}' +
       '@keyframes kgpShake{0%,100%{translate:0}25%{translate:-6px}75%{translate:6px}}' +
       '@keyframes kgpBob{0%,100%{translate:0 0}50%{translate:0 -6px}}';
     document.head.appendChild(st);
@@ -283,7 +350,7 @@
       '<div class="wal">⭐ 我的星星：<b>' + d.stars + '</b> 顆　<small>寫「📝 月考測驗卷」80 分得 1 顆、90 分 1.5 顆、100 分 2 顆，可以解鎖新萌寵</small></div>' +
       '<div class="ps">' + PETS.map(function (p) {
         var own = d.owned[p.id] || !p.star, enough = d.stars >= p.star;
-        var tag = own ? '' : '<span class="need">' + (enough ? '🔓 用 ' + p.star + ' 顆星解鎖' : '🔒 需要 ' + p.star + ' 顆星（還差 ' + Math.round((p.star - d.stars) * 10) / 10 + ' 顆）') + '</span>';
+        var tag = p.sponsor ? '<span class="spn">' + p.sponsor + '</span>' : own ? '' :'<span class="need">' + (enough ? '🔓 用 ' + p.star + ' 顆星解鎖' : '🔒 需要 ' + p.star + ' 顆星（還差 ' + Math.round((p.star - d.stars) * 10) / 10 + ' 顆）') + '</span>';
         return '<button class="pc' + (d.active === p.id ? ' on' : '') + (own ? '' : enough ? ' can' : ' need') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt=""><b>' + p.name + '</b><small>' + p.desc + '</small>' + tag + '</button>';
       }).join('') +
       // 還沒開放的萌寵：黑色剪影＋問號，不能點
@@ -303,7 +370,7 @@
         }
         api.choose(p.id); close();
         if (typeof window.onKGPetChange === 'function') window.onKGPetChange();
-        setTimeout(function () { if (el) say('我是' + p.name + '！我們一起去闖關吧！', 3000); }, 500);
+        setTimeout(function () { if (el) { if (p.poses) pose('wave', 0); say('我是' + p.name + '！我們一起去闖關吧！', 3000); } }, 500);
       };
     });
     w.querySelector('.skip').onclick = function () { if (auto) { var d2 = load(); d2.skipPick = true; save(d2); } close(); };
