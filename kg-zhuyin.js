@@ -11,14 +11,21 @@
   var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, SELECT: 1, OPTION: 1, NOSCRIPT: 1, CODE: 1, svg: 1, SVG: 1, CANVAS: 1, TITLE: 1 };
 
   var css = document.createElement('style');
+  // 測驗卷入口（#kgx-panel）和試卷（#kg-exam）有自己的樣式重設，所以每條規則也加一份它們開頭的，確保優先
+  function S(sel, body) { return sel.split(',').map(function (x) { return x + ',#kgx-panel ' + x + ',#kg-exam ' + x; }).join(',') + '{' + body + '}'; }
   css.textContent =
-    '.kz{display:inline-block;position:relative;margin-right:.62em;text-indent:0;pointer-events:none}' +
-    '.kz::after{content:attr(data-z);position:absolute;left:100%;top:50%;transform:translate(.06em,-50%);writing-mode:vertical-rl;text-orientation:upright;' +
-    'font:400 .32em/1.02 "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;letter-spacing:0;color:inherit;white-space:nowrap;text-shadow:none}' +
-    '.kz::before{content:attr(data-t);position:absolute;left:100%;top:50%;transform:translate(1.25em,-30%);font:700 .3em/1 "Microsoft JhengHei","PingFang TC",sans-serif;color:inherit;text-shadow:none}' +
-    '.kz.k0::before{left:100%;top:50%;transform:translate(.42em,calc(-50% - var(--zh,1.6) * .5em - .55em))}' +
-    'html.kz-off .kz{margin-right:0}html.kz-off .kz::after,html.kz-off .kz::before{content:none}' +
-    '#kz-tg{position:fixed;left:8px;bottom:8px;z-index:2147482900;font:700 14px "Microsoft JhengHei","PingFang TC",sans-serif;background:#fff;color:#c0392b;border:2px solid #f0a59b;border-radius:999px;padding:5px 12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);opacity:.92}' +
+    // --zs：注音大小＝國字的 0.36 倍，但最小 10px（小字也看得清楚）
+    S('.kz', '--zs:max(.36em,10px);display:inline-block;position:relative;margin:0 calc(var(--zs) * 1.75) 0 0;padding:0;text-indent:0;pointer-events:none;font:inherit;color:inherit') +
+    S('.kz::after,.kz::before', 'position:absolute;left:100%;top:50%;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;font-size:var(--zs);' +
+      'letter-spacing:0;white-space:nowrap;text-shadow:none;color:inherit;-webkit-text-fill-color:currentColor;background:none;font-style:normal') +
+    S('.kz::after', 'content:attr(data-z);transform:translate(.08em,-50%);writing-mode:vertical-rl;text-orientation:upright;line-height:1;font-weight:500') +
+    S('.kz::before', 'content:attr(data-t);transform:translate(.92em,calc(-50% + var(--zh,1) * .5em - .7em));line-height:1;font-weight:700') +
+    S('.kz.k0::before', 'transform:translate(.1em,calc(-50% - var(--zh,1) * .5em - .45em))') +
+    // 固定在畫面上的按鈕（回首頁、選年級…）空間小，用小一點、靠緊一點的注音
+    S('.kz-sm .kz', '--zs:9px;margin-right:13px') +
+    'html.kz-off .kz,html.kz-off #kgx-panel .kz,html.kz-off #kg-exam .kz{margin-right:0}' +
+    'html.kz-off .kz::after,html.kz-off .kz::before,html.kz-off #kgx-panel .kz::after,html.kz-off #kgx-panel .kz::before,html.kz-off #kg-exam .kz::after,html.kz-off #kg-exam .kz::before{content:none}' +
+    '#kz-tg{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;z-index:2147482900;font:700 14px "Microsoft JhengHei","PingFang TC",sans-serif;background:#fff;color:#c0392b;border:2px solid #f0a59b;border-radius:999px;padding:5px 12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);opacity:.92}' +
     '@media print{#kz-tg{display:none}}';
 
   function split(z) {           // 'ㄔㄤˊ' → ['ㄔㄤ','ˊ']；'˙ㄇㄣ' → ['ㄇㄣ','˙']
@@ -30,9 +37,20 @@
     var s = document.createElement('span'), p = split(z);
     s.className = p[1] === '˙' ? 'kz k0' : 'kz';
     s.setAttribute('data-z', p[0]); s.setAttribute('data-t', p[1]);
-    if (p[1] === '˙') s.style.setProperty('--zh', p[0].length);
+    s.style.setProperty('--zh', p[0].length);   // 注音有幾個符號（決定聲調、輕聲點的位置）
     s.textContent = ch;
     return s;
+  }
+  // 依前後字決定讀音（例如「數」：一個一個數 ㄕㄨˇ／哪一個數 ㄕㄨˋ）
+  // r = {v: 動詞讀音, n: 名詞讀音, nextN, nextV, seqV:[前面幾個字], prevN, prevV}
+  function rule(r, t, i) {
+    var nx = t.charAt(i + 1), pv = t.charAt(i - 1);
+    if (nx && r.nextN.indexOf(nx) >= 0) return r.n;
+    if (nx && r.nextV.indexOf(nx) >= 0) return r.v;
+    for (var k = 0; k < r.seqV.length; k++) if (t.substr(i - r.seqV[k].length, r.seqV[k].length) === r.seqV[k]) return r.v;
+    if (pv && r.prevN.indexOf(pv) >= 0) return r.n;
+    if (pv && r.prevV.indexOf(pv) >= 0) return r.v;
+    return r.n;
   }
   // 把一段文字切成：語詞（最長比對）→ 單字
   function annotateText(node) {
@@ -53,12 +71,18 @@
           i += hit[0].length; any = true; continue;
         }
         var c = t.charAt(i), z = DICT.c[c];
+        if (DICT.r && DICT.r[c]) z = rule(DICT.r[c], t, i) || z;
         if (z) { flush(); frag.appendChild(span(c, z)); any = true; i++; continue; }
       }
       buf += t.charAt(i); i++;
     }
     flush();
-    if (any) node.parentNode.replaceChild(frag, node);
+    if (!any) return;
+    var host = node.parentNode.closest && node.parentNode.closest('button,a,[role="button"]');
+    if (host && !host.classList.contains('kz-sm') && getComputedStyle(host).position === 'fixed') host.classList.add('kz-sm');
+    // 包成一整段：在 flex／grid 版面裡才不會每個字各自變成一格
+    var wrap = document.createElement('span'); wrap.className = 'kzw'; wrap.appendChild(frag);
+    node.parentNode.replaceChild(wrap, node);
   }
   function skip(el) {
     for (var e = el; e && e !== document.body; e = e.parentNode) {

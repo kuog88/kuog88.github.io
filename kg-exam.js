@@ -31,7 +31,7 @@
     '#kg-exam h1{text-align:center;font-size:clamp(20px,5vw,26px);margin:16px 0 4px;letter-spacing:2px}' +
     '#kg-exam .sub{text-align:center;color:#555;margin-bottom:6px}' +
     '#kg-exam .name{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin:10px 0 18px;font-size:16px}' +
-    '#kg-exam .name span{border-bottom:1px solid #333;min-width:120px;display:inline-block}' +
+    '#kg-exam .name>span:not(.kzw){border-bottom:1px solid #333;min-width:120px;display:inline-block}' +
     '#kg-exam h2{font-size:19px;margin:22px 0 10px;padding:6px 10px;background:#f3efe6;border-left:5px solid #8b5e34}' +
     '#kg-exam h2 small{font-weight:400;color:#666;font-size:14px;margin-left:8px}' +
     '#kg-exam .it{padding:10px 4px 12px;border-bottom:1px dashed #ddd;display:grid;gap:8px}' +
