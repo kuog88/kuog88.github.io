@@ -173,7 +173,7 @@
     var K = window.KGPet; if (!K) return { src: 'pets/honey/wave.webp', walk: 'pets/honey/cheer.webp', name: '蜜蜜' };
     var d = K.get(), p = (d.active && K.pet(d.active)) || K.pet('honey') || K.PETS[0];
     var st = p.stages[0].img;
-    return { src: K.url(p.poses ? p.poses.wave : st), walk: K.url(p.poses ? p.poses.cheer : st), name: p.name };
+    return { src: K.url(p.poses ? p.poses.wave : st), walk: K.url(p.poses ? (p.poses.run || p.poses.cheer) : st), name: p.name };
   }
   // 路線點：島i 左→中→右，接橋（曲線取樣）
   function buildRoute() {

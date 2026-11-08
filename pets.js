@@ -36,10 +36,28 @@
         '一題一題慢慢來，你做得超好！', '我要把你的努力告訴全世界！', '哇～你又進步了耶！', '你好專心喔，好酷！',
         '有你陪我讀書，蜜蜜好開心～', '蜜蜜幫你搧搧翅膀打氣！加油！', '你比昨天的自己更棒了！', '這麼難你都會，太強了吧！',
         '你的字寫得好認真喔～', '蜜蜜要送你一朵小花🌼', '你是最棒的小學霸！', '慢慢想沒關係，你一定想得出來！'],
-      stages: [{ img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }] }
+      stages: [{ img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }, { img: 'pets/honey/wave.webp' }] },
+    // 贊助滿 3000 解鎖：時髦金獅雷歐（Kling 生成 9 種姿勢），個性豪爽、滿滿正能量
+    { id: 'lion', name: '雷歐', desc: '戴墨鏡、掛金項鍊的金鬃大獅子，個性豪爽，最會幫你打氣！', price: 0, star: 0,
+      sponsor: '🦁 贊助滿 3000 已解鎖',
+      poses: { wave: 'pets/lion/wave.webp', cool: 'pets/lion/cool.webp', thumb: 'pets/lion/thumb.webp', flex: 'pets/lion/flex.webp',
+        cheer: 'pets/lion/cheer.webp', write: 'pets/lion/write.webp', think: 'pets/lion/think.webp', run: 'pets/lion/run.webp', sleep: 'pets/lion/sleep.webp' },
+      extra: ['cool', 'flex', 'run', 'flex'],
+      clickSeq: ['flex', 'cool', 'cheer', 'thumb', 'run', 'think'],
+      fx: ['🔥', '⭐', '💪'],
+      praise: ['太帥了吧！這題被你秒殺！😎', '冠軍就是你！🏆', '沒在怕的！你根本是學霸！', '這種題目？對你來說小意思啦！',
+        '你的大腦正在升級中…已經滿級！', '給你一個獅子級的讚！👍', '衝啊！下一題也拿下它！', '錯了沒關係，獅子也會跌倒，站起來就更強！',
+        '你今天超有氣勢！', '穩穩的！就是這個節奏！', '雷歐看好你，你一定行！', '每答一題，你就更強壯一點！💪',
+        '不放棄的人最帥！', '厲害到我的墨鏡都快掉了！', '相信自己，你比你想的更厲害！', '一步一步來，冠軍都是這樣練出來的！',
+        '你剛剛那題超神的！', '勇敢挑戰難題，你就是真正的勇者！', '今天的你，比昨天更強！', '來！跟我一起喊：我做得到！'],
+      writeLines: ['我也來認真讀書，一起變強！📖', '專心模式，啟動！', '看書也能很帥氣～'],
+      thinkTxt: '嗯…慢慢想，你一定想得出來！',
+      wake: ['我醒啦！充飽電，繼續衝！', '睡飽了！今天也要拿冠軍！'],
+      sleepTxt: '呼嚕嚕…（點我叫醒雷歐）',
+      stages: [{ img: 'pets/lion/wave.webp' }, { img: 'pets/lion/wave.webp' }, { img: 'pets/lion/wave.webp' }, { img: 'pets/lion/wave.webp' }] }
   ];
   // 挑選視窗裡「還沒開放」的剪影（借現有圖片變形後塗黑，看不出是誰）
-  var LOCKED = ['pets/fluffy-orange.webp', 'pets/fluffy-green.webp'];
+  var LOCKED = ['pets/fluffy-green.webp'];
   var LOCK_TF = ['transform:scaleX(-1) scaleY(1.12)', 'transform:scale(0.9,1.15) rotate(-8deg)', 'transform:scaleX(-1.1) rotate(6deg)'];
   var CHEER = ['你好棒！', '再闖一關吧！', '我陪你一起加油！', '答錯沒關係，再想想～', '今天也很努力喔！', '我們一起變厲害！',
     '慢慢來，看清楚題目再作答！', '錯的題目最有價值，訂正完就學會了！', '休息一下眼睛，再繼續衝！', '你比昨天的自己更厲害了！',
@@ -236,19 +254,21 @@
     if (r < 0.2) {          // 笑話：先想一想，再歡呼說答案
       var j = pick(JOKE); pose('think', 0); say(j[0], 2600);
       setTimeout(function () { if (el && !sleeping) { pose('cheer', 3400); say(j[1], 3200); } }, 2700);
-    } else if (r < 0.32) { pose('write', 4000); say(pick(['我也跟你一起寫作業～', '我們一起把題目看清楚！', '蜜蜜也在認真做筆記喔！']), 3000); }
-    else { pose(pick(['thumb', 'cheer', 'wave', 'thumb']), 3200); say(pick(sd.p.praise), 3000); }
+    } else if (r < 0.32) { pose('write', 4000); say(pick(sd.p.writeLines || ['我也跟你一起寫作業～', '我們一起把題目看清楚！', '蜜蜜也在認真做筆記喔！']), 3000); }
+    else { pose(pick(['thumb', 'cheer', 'wave', 'thumb'].concat(sd.p.extra || [])), 3200); say(pick(sd.p.praise), 3000); }
   }
   // 太久沒動就睡著，小朋友一動就醒來
   function idleReset() {
     clearTimeout(idleT);
     if (sleeping) {
       sleeping = false;
-      if (hasPoses() && el && !el.hidden) { pose('cheer', 2600); say(pick(['啊！我醒了！你還在努力耶，好棒！', '蜜蜜睡飽了！我們繼續加油～']), 3000); }
+      var w = hasPoses();
+      if (w && el && !el.hidden) { pose('cheer', 2600); say(pick(w.p.wake || ['啊！我醒了！你還在努力耶，好棒！', '蜜蜜睡飽了！我們繼續加油～']), 3000); }
     }
     idleT = setTimeout(function () {
-      if (!hasPoses() || !el || el.hidden) return;
-      sleeping = true; pose('sleep', 0); say('呼…呼…（點我叫醒蜜蜜）', 4000);
+      var z = hasPoses();
+      if (!z || !el || el.hidden) return;
+      sleeping = true; pose('sleep', 0); say(z.p.sleepTxt || '呼…呼…（點我叫醒蜜蜜）', 4000);
     }, 120000);
   }
   ['pointerdown', 'keydown'].forEach(function (t) { addEventListener(t, idleReset, true); });
@@ -290,10 +310,10 @@
     var sd = stageData(); if (!sd || playing) return;
     if (sd.p.poses) {       // 蜜蜜：點一下就換姿勢、誇獎＋冒愛心
       playing = true; sleeping = false;
-      var seq = ['cheer', 'thumb', 'wave', 'think'], nm = seq[animIdx++ % seq.length];
+      var seq = sd.p.clickSeq || ['cheer', 'thumb', 'wave', 'think'], nm = seq[animIdx++ % seq.length];
       pose(nm, 2600);
-      say(nm === 'think' ? '嗯…你在想什麼呢？你一定想得出來！' : pick(sd.p.praise), 2800);
-      ['💛', '✨', '💛'].forEach(function (e, i) { setTimeout(function () { var f = document.createElement('span'); f.className = 'fx'; f.textContent = e; f.style.marginLeft = (i - 1) * 18 + 'px'; el.appendChild(f); setTimeout(function () { f.remove(); }, 1300); }, i * 180); });
+      say(nm === 'think' ? (sd.p.thinkTxt || '嗯…你在想什麼呢？你一定想得出來！') : pick(sd.p.praise), 2800);
+      (sd.p.fx || ['💛', '✨', '💛']).forEach(function (e, i) { setTimeout(function () { var f = document.createElement('span'); f.className = 'fx'; f.textContent = e; f.style.marginLeft = (i - 1) * 18 + 'px'; el.appendChild(f); setTimeout(function () { f.remove(); }, 1300); }, i * 180); });
       setTimeout(function () { playing = false; }, 1500);
       return;
     }

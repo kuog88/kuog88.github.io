@@ -125,13 +125,13 @@
   <footer>國文／社會／自然／數學／英文 · 遊戲製作者：基爸</footer>
 <script src="kg-profile.js"></script>
 <script>KGProfile.chip(document.getElementById('kgp-root'));</script>
-<script src="pets.js" defer></script>
+<script src="pets.js?v=20261108" defer></script>
 <script>
   // 萌寵不自動跳出，按鈕顯示目前的萌寵
   window.onKGPetChange = function () { if (!window.KGPet) return; var d = KGPet.get(), b = document.getElementById('pet-btn'), p = d.active && KGPet.pet(d.active); if (b) b.textContent = p ? '🐾 我的萌寵：' + p.name : '🐾 選一隻萌寵陪我'; };
   window.addEventListener('load', window.onKGPetChange);
 </script>
-<script src="islands.js?v=20261108"></script>
+<script src="islands.js?v=20261108b"></script>
 <script src="https://kuog88.github.io/bgm.js" defer></script>
 </body>
 </html>
