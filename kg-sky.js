@@ -45,15 +45,15 @@
     ],
     // 裝飾物：img 在 sky/<id>.webp；spot＝放在哪座島旁邊（i 第幾座、dx/dy 以島的大小為單位、w 寬度）
     decor: [
-      { id: 'flowers', name: '小花叢', price: 60, spot: { i: 0, dx: -0.3, dy: 0.2, w: 0.28 } },
-      { id: 'lanterns', name: '小燈籠串', price: 100, spot: { i: 3, dx: 0.02, dy: -0.52, w: 0.42 } },
-      { id: 'balloons', name: '氣球束', price: 120, spot: { i: 1, dx: 0.4, dy: -0.38, w: 0.26 } },
-      { id: 'windmill', name: '風車小屋', price: 250, spot: { i: 2, dx: 0.42, dy: 0.12, w: 0.32 } },
-      { id: 'airballoon', name: '熱氣球', price: 300, spot: { i: 1, dx: -0.14, dy: -0.6, w: 0.34, back: 1 } },
-      { id: 'rainbow', name: '彩虹', price: 350, spot: { i: 2, dx: 0, dy: -0.45, w: 0.66, back: 1 } },
-      { id: 'airship', name: '小飛船', price: 700, spot: { i: 0, dx: 0.52, dy: -0.5, w: 0.38, back: 1 } },
-      { id: 'whale', name: '天空鯨魚', price: 900, spot: { i: 4, dx: -0.46, dy: -0.52, w: 0.46, back: 1 } },
-      { id: 'tower', name: '傳說・星星水晶塔', price: 2000, spot: { i: 4, dx: 0.3, dy: 0.08, w: 0.32 }, legend: 1 }
+      { id: 'flowers', name: '小花叢', price: 60, desc: '每座島都種一叢', spot: { i: 0, dx: -0.3, dy: 0.2, w: 0.28 } },
+      { id: 'lanterns', name: '小燈籠串', price: 100, desc: '掛在每座吊橋上', spot: { i: 3, dx: 0.02, dy: -0.52, w: 0.42 } },
+      { id: 'balloons', name: '氣球束', price: 120, desc: '綁在吊橋的橋柱上', spot: { i: 1, dx: 0.4, dy: -0.38, w: 0.26 } },
+      { id: 'windmill', name: '風車小屋', price: 250, desc: '蓋在數學島旁邊', spot: { i: 2, dx: 0.42, dy: 0.12, w: 0.32 } },
+      { id: 'airballoon', name: '熱氣球', price: 300, desc: '在天空慢慢飄', spot: { i: 1, dx: -0.14, dy: -0.6, w: 0.34, back: 1 } },
+      { id: 'rainbow', name: '彩虹', price: 350, desc: '從自然島跨到數學島', spot: { i: 2, dx: 0, dy: -0.45, w: 0.66, back: 1 } },
+      { id: 'airship', name: '小飛船', price: 700, desc: '在天空到處飛來飛去', spot: { i: 0, dx: 0.52, dy: -0.5, w: 0.38, back: 1 } },
+      { id: 'whale', name: '天空鯨魚', price: 900, desc: '在天上游來游去', spot: { i: 4, dx: -0.46, dy: -0.52, w: 0.46, back: 1 } },
+      { id: 'tower', name: '傳說・星星水晶塔', price: 2000, desc: '蓋在英文島旁邊，會發光', spot: { i: 4, dx: 0.3, dy: 0.08, w: 0.32 }, legend: 1 }
     ]
   };
   function item(kind, id) { return SHOP[kind].filter(function (x) { return x.id === id; })[0]; }
@@ -141,13 +141,16 @@
     '#sky-fx .mw{position:absolute;left:-10%;top:10%;width:120%;height:45%;transform:rotate(-14deg);background:radial-gradient(ellipse at center,rgba(255,220,255,.35),rgba(170,140,255,.18) 40%,transparent 70%);filter:blur(8px)}' +
     '@keyframes skyTw{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.2)}}' +
     '@keyframes skyAu{0%{transform:translateX(-6%) skewX(-8deg)}100%{transform:translateX(6%) skewX(8deg)}}' +
-    '.sky-dec{position:absolute;pointer-events:none;z-index:2;transform:translate(-50%,-50%);animation:skyFloat 5s ease-in-out infinite}' +
-    '.sky-dec.back{z-index:0}' +
+    '.sky-dec{position:absolute;pointer-events:none;z-index:2;transform-origin:50% 100%}' +
+    '.sky-dec.swing img{transform-origin:50% 0;animation:skySwing 3.4s ease-in-out infinite}' +
+    '.sky-dec.sway img{transform-origin:50% 100%;animation:skySway 3s ease-in-out infinite}' +
+    '.sky-dec.glow img{animation:skyGlow 2.4s ease-in-out infinite}' +
+    '.sky-dec.back{z-index:0}.sky-dec.front{z-index:3}' +
     '.sky-dec img{width:100%;height:auto;display:block;filter:drop-shadow(0 8px 8px rgba(40,60,110,.22))}' +
-    '.sky-dec.whale,.sky-dec.airship{animation:skyDrift 14s ease-in-out infinite}' +
-    '@keyframes skyFloat{0%,100%{translate:0 0}50%{translate:0 -8px}}' +
-    '@keyframes skyDrift{0%,100%{translate:-14px 0}50%{translate:14px -10px}}' +
-    '@media (prefers-reduced-motion:reduce){#sky-fx i,#sky-fx .au,.sky-dec{animation:none!important}}' +
+    '@keyframes skySwing{0%,100%{rotate:-2deg}50%{rotate:2deg}}' +
+    '@keyframes skySway{0%,100%{rotate:-4deg}50%{rotate:4deg}}' +
+    '@keyframes skyGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(200,150,255,.6))}50%{filter:drop-shadow(0 0 16px rgba(255,220,120,.95))}}' +
+    '@media (prefers-reduced-motion:reduce){#sky-fx i,#sky-fx .au,.sky-dec,.sky-dec img{animation:none!important}}' +
     // 商店
     '#sky-shop{position:fixed;inset:0;z-index:2147482000;background:rgba(20,30,60,.55);display:grid;place-items:center;padding:12px;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;color:#2b2b2b}' +
     '#sky-shop .bx{background:#fffdf7;border-radius:26px;width:min(820px,100%);max-height:92vh;overflow:auto;padding:16px 16px 20px;box-shadow:0 20px 50px rgba(0,0,0,.3)}' +
@@ -188,18 +191,72 @@
     }
     if (window.KGIsland) KGIsland.redraw();
   }
-  // 由 islands.js 在排版時呼叫：把裝飾物放到島旁邊
-  function placeDecor(root, P, size) {
+  // 由 islands.js 在排版時呼叫：裝飾物要跟島、吊橋連在一起（種在草地上、掛在橋上、綁在橋柱上），會飛的就在天空飛
+  // ax/ay＝圖片的哪一點對準位置（0.5,1＝底部中間踩在地上）
+  var flyers = [], flyRaf = 0;
+  function put(root, id, x, y, w, ax, ay, cls, delay, flip) {
+    var e = document.createElement('div'); e.className = 'sky-dec ' + id + (cls ? ' ' + cls : '');
+    e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.width = w + 'px';
+    e.style.transform = 'translate(' + (-ax * 100) + '%,' + (-ay * 100) + '%)' + (flip ? ' scaleX(-1)' : '');
+    e.style.animationDelay = (delay || 0) + 's';
+    e.innerHTML = '<img src="' + BASE + 'sky/' + id + '.webp" alt="">';
+    root.appendChild(e); return e;
+  }
+  function placeDecor(root, P, size, G) {
     root.querySelectorAll('.sky-dec').forEach(function (e) { e.remove(); });
-    var d = load(), on = d.eq.decor || {};
-    SHOP.decor.forEach(function (it, k) {
-      if (!on[it.id] || !owns(d, 'decor', it.id) || !P[it.spot.i]) return;
-      var e = document.createElement('div'); e.className = 'sky-dec ' + it.id + (it.spot.back ? ' back' : '');
-      e.style.left = (P[it.spot.i].x + it.spot.dx * size) + 'px'; e.style.top = (P[it.spot.i].y + it.spot.dy * size) + 'px';
-      e.style.width = (it.spot.w * size) + 'px'; e.style.animationDelay = (-k * 0.7) + 's';
-      e.innerHTML = '<img src="' + BASE + 'sky/' + it.id + '.webp" alt="">';
-      root.appendChild(e);
-    });
+    flyers = []; cancelAnimationFrame(flyRaf);
+    var d = load(), on = d.eq.decor || {}, has = function (id) { return on[id] && owns(d, 'decor', id); };
+    if (!G || !P.length) return;
+    var n = P.length, br = G.br;
+    // 小花叢：每座島的草地前緣都種一叢
+    if (has('flowers')) P.forEach(function (p, i) { put(root, 'flowers', p.x + (i % 2 ? 0.27 : -0.27) * size, G.deck[i] + size * 0.17, size * 0.17, 0.5, 0.85, 'front', -i * 0.6, i % 2); });
+    // 小燈籠串：掛在每一座吊橋的扶手繩下面
+    if (has('lanterns')) br.forEach(function (b, i) { var e = put(root, 'lanterns', b.m.x, b.m.y - 24, b.len * 0.62, 0.5, 0.2, 'front swing', -i * 0.8); e.style.transform += ' rotate(' + (Math.atan2(b.q.y - b.p.y, b.q.x - b.p.x) * 57.3).toFixed(1) + 'deg)'; });
+    // 氣球束：綁在吊橋的橋柱上（繩子末端對準柱頂）
+    if (has('balloons')) [[0, 'p'], [1, 'q'], [2, 'p'], [3, 'q']].forEach(function (a, k) { var b = br[a[0]]; if (!b) return; var o = b[a[1]]; put(root, 'balloons', o.x, o.y - 28, size * 0.15, 0.46, 0.97, 'front sway', -k * 1.1, k % 2); });
+    // 風車小屋：蓋在數學島（蒸汽城堡）旁邊的草地上
+    if (has('windmill') && P[2]) put(root, 'windmill', P[2].x - size * 0.3, G.deck[2] + size * 0.15, size * 0.25, 0.5, 0.92, 'front', -1.2);
+    // 星星水晶塔：蓋在英文島（魔法學院）旁邊
+    if (has('tower') && P[n - 1]) put(root, 'tower', P[n - 1].x + size * 0.31, G.deck[n - 1] + size * 0.13, size * 0.27, 0.5, 0.95, 'front glow', -0.5);
+    // 彩虹：從自然島跨到數學島的天上，兩端的雲落在兩座島上
+    if (has('rainbow') && P[2]) {
+      var x1 = P[1].x, x2 = P[2].x, w = (x2 - x1) * 1.25, foot = Math.min(P[1].y, P[2].y) - size * 0.1, h = Math.min(w * 0.8, foot - 4);
+      var e = put(root, 'rainbow', (x1 + x2) / 2, foot, w, 0.5, 1, 'back still'); e.querySelector('img').style.height = h + 'px'; e.querySelector('img').style.objectFit = 'fill';
+    }
+    // 會飛的：熱氣球慢慢飄過天空、小飛船到處亂飛、鯨魚在天上游來游去
+    var fly = function (id, w, speed, mode) {
+      var e = put(root, id, 0, 0, w, 0.5, 0.5, 'back flyer');
+      var f = { e: e, w: w, sp: speed, mode: mode, x: Math.random() * G.W, y: G.H * (0.15 + Math.random() * 0.3), tx: 0, ty: 0, dir: 1, t: Math.random() * 6 };
+      pick(f); flyers.push(f);
+    };
+    function pick(f) {   // 下一個要飛去的點
+      if (f.mode === 'wander') { f.tx = size * 0.2 + Math.random() * (G.W - size * 0.4); f.ty = G.H * (0.08 + Math.random() * 0.45); }
+      else if (f.mode === 'swim') { f.tx = f.x < G.W / 2 ? G.W - size * 0.3 : size * 0.3; f.ty = G.H * (0.12 + Math.random() * 0.25); }
+      else { f.tx = f.x + (Math.random() < 0.5 ? -1 : 1) * G.W * 0.4; f.tx = Math.max(size * 0.2, Math.min(G.W - size * 0.2, f.tx)); f.ty = G.H * (0.06 + Math.random() * 0.3); }
+    }
+    if (has('airballoon')) fly('airballoon', size * 0.28, 12, 'drift');
+    if (has('airship')) fly('airship', size * 0.36, 48, 'wander');
+    if (has('whale')) fly('whale', size * 0.42, 26, 'swim');
+    if (!flyers.length) return;
+    var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches, last = 0;
+    function draw(f) {
+      var bob = Math.sin(f.t * (f.mode === 'swim' ? 1.4 : 1)) * (f.mode === 'drift' ? 6 : 9);
+      f.e.style.left = f.x + 'px'; f.e.style.top = (f.y + bob) + 'px';
+      f.e.style.transform = 'translate(-50%,-50%) scaleX(' + (f.mode === 'drift' ? 1 : f.dir) + ')' + (f.mode === 'wander' ? ' rotate(' + (Math.sin(f.t * 1.7) * 4).toFixed(1) + 'deg)' : '');
+    }
+    flyers.forEach(draw);
+    if (RM) return;
+    (function step(ts) {
+      var dt = Math.min(0.05, (ts - (last || ts)) / 1000); last = ts;
+      flyers.forEach(function (f) {
+        f.t += dt;
+        var dx = f.tx - f.x, dy = f.ty - f.y, dist = Math.hypot(dx, dy), v = f.sp * (size / 220) * dt;
+        if (dist < 4) pick(f); else { f.x += dx / dist * v; f.y += dy / dist * v; }
+        if (Math.abs(dx) > 2) f.dir = f.e.classList.contains('whale') ? (dx < 0 ? 1 : -1) : (dx < 0 ? -1 : 1);   // 鯨魚圖頭朝左、飛船圖頭朝右
+        draw(f);
+      });
+      flyRaf = requestAnimationFrame(step);
+    })(0);
   }
   // 吊橋樣式（islands.js 畫橋時讀）
   function bridgeStyle() { var d = load(); return owns(d, 'bridge', d.eq.bridge) ? d.eq.bridge : 'wood'; }
@@ -244,7 +301,7 @@
           var btn = !have ? (bal >= it.price ? '<button type="button" data-buy="' + it.id + '">💎 ' + it.price + ' 買下</button>' : '<button type="button" disabled>💎 ' + it.price + '</button><span class="need">還差 ' + (it.price - bal) + ' 晶幣</span>')
             : tab === 'decor' ? '<button type="button" class="' + (using ? 'off' : 'use') + '" data-tg="' + it.id + '">' + (using ? '收起來' : '放到天空城') + '</button>'
             : using ? '<button type="button" disabled>使用中</button>' : '<button type="button" class="use" data-use="' + it.id + '">換上</button>';
-          return '<div class="it' + (it.legend ? ' legend' : '') + '">' + pv + '<div class="nm">' + it.name + '</div>' + (have ? '' : '<div class="pr">' + (it.price ? '💎 ' + it.price : '免費') + '</div>') + btn + '</div>';
+          return '<div class="it' + (it.legend ? ' legend' : '') + '">' + pv + '<div class="nm">' + it.name + '</div>'  (it.desc ? '<div class="need" style="color:#7a6aa8">' + it.desc + '</div>' : '') + (have ? '' : '<div class="pr">' + (it.price ? '💎 ' + it.price : '免費') + '</div>') + btn + '</div>';
         }).join('') + '</div>';
       }
       h += '</div>';

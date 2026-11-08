@@ -125,11 +125,17 @@
     root.style.height = H + 'px';
     els.forEach(function (a, i) { a.style.width = size + 'px'; a.style.left = P[i].x + 'px'; a.style.top = P[i].y + 'px'; });
     drawBridges();
-    if (window.KGSky) KGSky.placeDecor(root, P, size);
+    if (window.KGSky) KGSky.placeDecor(root, P, size, geo());
     if (walker) walker.style.setProperty('--pw', Math.round(size * 0.27) + 'px');
   }
+  // 給天空城裝飾用的位置資料：每座島的草地高度、每座橋的兩端與中點
+  function geo() {
+    var br = [];
+    for (var i = 0; i < ISL.length - 1; i++) { var e = bridgeEnds(i), p = e[0], q = e[1], len = Math.hypot(q.x - p.x, q.y - p.y), sag = Math.max(12, len * 0.12); br.push({ p: p, q: q, m: { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 + sag / 2 }, len: len }); }
+    return { W: parseFloat(root.style.width), H: parseFloat(root.style.height), deck: P.map(function (x, i) { return deck(i); }), br: br };
+  }
   // 給天空城商店用：換吊橋、裝飾物後重畫
-  window.KGIsland = { redraw: function () { if (P.length) { drawBridges(); if (window.KGSky) KGSky.placeDecor(root, P, size); } } };
+  window.KGIsland = { redraw: function () { if (P.length) { drawBridges(); if (window.KGSky) KGSky.placeDecor(root, P, size, geo()); } } };
   // 每座島的走道：從左緣（或上一座橋接點）到右緣，高度在草地表面
   function deck(i) { return P[i].y - size * 0.06; }
   function anchors(i) {
