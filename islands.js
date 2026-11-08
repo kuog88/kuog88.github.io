@@ -98,13 +98,25 @@
   hint.textContent = '👆 左右滑動，看看其他島嶼';
   wrap.parentNode.insertBefore(hint, wrap.nextSibling);
   var userScrolledAt = 0;
-  ['touchstart', 'wheel', 'mousedown'].forEach(function (t) { wrap.addEventListener(t, function () { userScrolledAt = Date.now(); }, { passive: true }); });
+  ['touchstart', 'touchmove', 'wheel', 'mousedown'].forEach(function (t) { wrap.addEventListener(t, function () { userScrolledAt = Date.now(); }, { passive: true }); });
+  // 小朋友左右滑：萌寵跑去畫面中間那座島，太快會喊累，到了會幫忙選科目
+  var goal = -1, goalUntil = 0, goalArrived = false, lastTired = 0;
+  wrap.addEventListener('scroll', function () {
+    if (!pano || !walker || Date.now() - userScrolledAt > 2500) return;   // 不是小朋友滑的（程式自動捲動）就不理
+    var center = wrap.scrollLeft + wrap.clientWidth / 2, g = 0;
+    P.forEach(function (p, i) { if (Math.abs(p.x - center) < Math.abs(P[g].x - center)) g = i; });
+    if (g !== goal) { goal = g; goalArrived = false; pauseUntil = 0; }
+    goalUntil = Date.now() + 9000;
+    if (Math.abs(pos.x - center) > wrap.clientWidth * 0.45 && Date.now() - lastTired > 3500) {
+      lastTired = Date.now(); say(pick(TIRED), 1800);
+    }
+  }, { passive: true });
   var P = [], size = 0, pano = false;
   function layout() {
     var avail = wrap.clientWidth, wide = avail >= 760, W, gap;
     pano = !wide;
     if (wide) { W = avail; size = Math.min(235, W / 5.3); gap = (W - size) / 4; }
-    else { size = Math.min(220, Math.max(170, avail * 0.52)); gap = size * 1.22; W = size + gap * 4; }
+    else { size = Math.min(300, Math.max(210, avail * 0.74)); gap = size * 1.14; W = size + gap * 4; }
     root.style.width = W + 'px'; root.style.maxWidth = 'none';
     hint.style.display = pano ? 'block' : 'none';
     P = ISL.map(function (s, i) { return { x: size / 2 + gap * i, y: size * 0.6 + (i % 2 ? size * 0.13 : 0) }; });
@@ -176,13 +188,14 @@
     return { src: K.url(p.poses ? p.poses.wave : st), walk: K.url(p.poses ? (p.poses.run || p.poses.cheer) : st), name: p.name };
   }
   // 路線點：島i 左→中→右，接橋（曲線取樣）
+  var stopIdx = [];
   function buildRoute() {
-    route = [];
+    route = []; stopIdx = [];
     for (var i = 0; i < ISL.length; i++) {
       var A = anchors(i);
       var into = i ? bridgeEnds(i - 1)[1] : (P[1].x > P[0].x ? A.l : A.r);
       var out = i < ISL.length - 1 ? bridgeEnds(i)[0] : (P[i].x > P[i - 1].x ? A.r : A.l);
-      route.push({ x: into.x, y: into.y }); route.push({ x: A.c.x, y: A.c.y, stop: i }); route.push({ x: out.x, y: out.y });
+      route.push({ x: into.x, y: into.y }); stopIdx[i] = route.length; route.push({ x: A.c.x, y: A.c.y, stop: i }); route.push({ x: out.x, y: out.y });
       if (i < ISL.length - 1) {
         var e = bridgeEnds(i), p = e[0], q = e[1], len = Math.hypot(q.x - p.x, q.y - p.y), sag = Math.max(12, len * 0.12);
         var mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2 + sag;
@@ -192,6 +205,11 @@
   }
   function say(t, ms) { bub.textContent = t; bub.classList.add('on'); clearTimeout(bub._t); bub._t = setTimeout(function () { bub.classList.remove('on'); }, ms || 2200); }
   var LINES = ['這裡是{n}島！一起去{s}闖關吧！', '{s}好漂亮喔～點我旁邊的島就能進去！', '下一站，{n}！', '我最喜歡{n}了！你呢？'];
+  var TIRED = ['你跑慢點啦～我快累死了！', '等等我！我的腿比較短啦！', '呼…呼…你滑太快了！', '慢一點～我追不上了！', '咻～我來了我來了！'];
+  var PICK = ['這裡是{n}島！要進去{s}嗎？點一下島就出發！', '你決定要去哪一座島了嗎？選好就點下去吧！', '{n}島到了！今天想挑戰{n}嗎？',
+    '要不要從{n}開始？我陪你一起闖關！', '還在想嗎？左右滑一滑，選一座最想去的島！', '{s}裡面有好多關卡等你喔！'];
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function fill(t, s) { return t.replace(/\{n\}/g, s.name).replace(/\{s\}/g, s.sub); }
   function startWalker() {
     walker = document.createElement('div'); walker.id = 'isl-walker'; walker.setAttribute('role', 'button'); walker.title = '點我換萌寵';
     walker.innerHTML = '<span class="bub"></span><img alt="">';
@@ -210,24 +228,40 @@
   function tick(t) {
     raf = requestAnimationFrame(tick);
     var dt = Math.min(50, t - (lastT || t)); lastT = t;
-    if (t < pauseUntil) return;
+    var chasing = goal >= 0 && Date.now() < goalUntil;
+    if (goal >= 0 && !chasing) goal = -1;   // 小朋友很久沒滑了：回去來回散步
+    if (t < pauseUntil && !chasing) return;
+    var mult = 1;
+    if (chasing) {
+      var gi = stopIdx[goal];
+      if (seg === gi) {                      // 跑到了：停下來幫忙選科目
+        if (!goalArrived) {
+          goalArrived = true; goalUntil = Date.now() + 12000;
+          walker.classList.add('rest'); img.src = walker._p.src;
+          say(fill(pick(PICK), ISL[goal]), 3200);
+        }
+        return;
+      }
+      dir = gi > seg ? 1 : -1;
+      mult = Math.abs(pos.x - P[goal].x) > wrap.clientWidth * 0.5 ? 3.4 : 2;   // 落後很多就衝刺
+    }
     if (walker.classList.contains('rest')) { walker.classList.remove('rest'); img.src = walker._p.walk; }
     var target = route[seg + dir]; if (!target) { dir = -dir; target = route[seg + dir]; }
-    var speed = size * 0.0011 * dt;   // 每毫秒移動距離（跟島的大小成比例）
+    var speed = size * 0.0011 * dt * mult;   // 每毫秒移動距離（跟島的大小成比例）
     var dx = target.x - pos.x, dy = target.y - pos.y, dist = Math.hypot(dx, dy);
     if (Math.abs(dx) > 0.5) walker.classList.toggle('left', dx < 0);
     if (dist <= speed) {
       pos = { x: target.x, y: target.y }; seg += dir;
-      if (target.stop !== undefined) {       // 到了島中央：停下來說話
+      if (target.stop !== undefined && !chasing) {       // 散步到島中央：停下來說話
         var s = ISL[target.stop];
         pauseUntil = t + 2600; walker.classList.add('rest'); img.src = walker._p.src;
-        say(LINES[Math.floor(Math.random() * LINES.length)].replace('{n}', s.name).replace('{s}', s.sub), 2400);
+        say(fill(pick(LINES), s), 2400);
       }
-      if (seg === 0 || seg === route.length - 1) dir = -dir;
+      if (!chasing && (seg === 0 || seg === route.length - 1)) dir = -dir;
     } else { pos = { x: pos.x + dx / dist * speed, y: pos.y + dy / dist * speed }; }
     place();
-    // 手機長條：小朋友 6 秒沒有自己滑，就慢慢跟著萌寵捲動
-    if (pano && Date.now() - userScrolledAt > 6000) {
+    // 手機長條：小朋友 6 秒沒有自己滑、也不在追島嶼時，就慢慢跟著萌寵捲動
+    if (pano && !chasing && Date.now() - userScrolledAt > 6000) {
       var want = pos.x - wrap.clientWidth / 2, cur = wrap.scrollLeft;
       if (Math.abs(want - cur) > 2) wrap.scrollLeft = cur + (want - cur) * 0.06;
     }
