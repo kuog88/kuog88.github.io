@@ -26,10 +26,10 @@
     if (!confirm('要離開這個遊戲，回到遊戲樂園選科目嗎？')) e.preventDefault();
   });
   document.body.appendChild(a);
-  // 家長報表（國文有自己的報表，不載入）
-  if (!window.KGReport && !/\/guoyu-island\//.test(location.pathname)) {
+  // 家長報表（國文也載入：過關紀錄、大星星動畫）
+  if (!window.KGReport) {
     var rs = document.createElement('script');
-    rs.src = 'https://kuog88.github.io/parent-report.js?v=20261108';
+    rs.src = 'https://kuog88.github.io/parent-report.js?v=20261108b';
     document.head.appendChild(rs);
   }
   // 月考測驗卷與隨機出現的萌寵（英文由另一邊獨立管理，不載入）

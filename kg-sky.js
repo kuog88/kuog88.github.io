@@ -73,11 +73,13 @@
         var pct = 0, made = false;
         if (sj === 'chinese') {
           var cnt = GUOYU_N[S.key] || [12, 12, 12];
-          if (S.s === '上') made = true;   // 國文目前只有上學期
-          VER.forEach(function (v, vi) {
-            var sum = 0, re = new RegExp('^' + v + '-' + S.g + S.s + '-');
-            Object.keys(gy).forEach(function (id) { if (re.test(id)) sum += +gy[id] || 0; });
-            pct = Math.max(pct, sum / (cnt[vi] * 3));
+          if (S.s === '上') made = true;   // 國文目前只有上學期（注音島、加強練習的 id 沒分上下，先只算上學期）
+          if (made) VER.forEach(function (v, vi) {
+            // 關卡：課文 + 一年級注音島 5 關 + 三年級以上加強練習 6 關 + 五六年級閱讀 3 關（國語視窗 2026-11-08 提供）
+            var sum = 0, n = cnt[vi] + (S.g === 1 ? 5 : 0) + (S.g >= 3 ? 6 : 0) + (S.g >= 5 ? 3 : 0);
+            var re = new RegExp('^(' + v + '-' + S.g + S.s + '-|' + S.g + '-' + v + '-(pr|read)-' + (S.g === 1 ? '|g1-zy-' : '') + ')');
+            Object.keys(gy).forEach(function (id) { if (re.test(id)) sum += Math.min(3, +gy[id] || 0); });
+            pct = Math.max(pct, sum / (n * 3));
           });
         } else {
           var id = REPO[sj] + '/grade' + S.g + (S.s === '下' ? '-2' : ''), mx = MAX[id];
