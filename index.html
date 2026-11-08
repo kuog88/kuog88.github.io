@@ -10,18 +10,18 @@
 <meta property="og:url" content="https://kuog88.github.io/">
 <meta property="og:title" content="國小課業複習遊戲">
 <meta property="og:description" content="國文、社會、自然、數學、英文學習遊戲，選一個科目開始闖關吧！">
-<meta property="og:image" content="https://kuog88.github.io/og-20261101.png">
+<meta property="og:image" content="https://kuog88.github.io/og-20261108.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="zh_TW">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://kuog88.github.io/og-20261101.png">
+<meta name="twitter:image" content="https://kuog88.github.io/og-20261108.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     min-height: 100vh;
     font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
-    background: linear-gradient(160deg, #fff7d6 0%, #d9f2ff 100%);
+    background: linear-gradient(180deg, #8fd0ff 0%, #c9ecff 38%, #fff2dc 100%) fixed;
     color: #2b2b2b;
     display: flex; flex-direction: column; align-items: center;
     padding: 48px 16px;
@@ -86,6 +86,9 @@
   .sponsor:focus-visible { outline: none; }
   @keyframes kowtow { 0%, 60%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-18deg) translateY(4px); } }
   @media (prefers-reduced-motion: reduce) { .sponsor .kneel { animation: none; } }
+  /* 首頁的萌寵改在天空吊橋上走，不另外到處散步 */
+  #kg-pet { display: none !important; }
+  .note { margin-bottom: 18px; }
   #qr { margin: auto; border: none; border-radius: 24px; padding: 14px; max-width: min(92vw, 440px); background: #fff; }
   #qr::backdrop { background: rgba(0, 0, 0, .55); }
   #qr img { display: block; width: 100%; height: auto; border-radius: 14px; }
@@ -101,33 +104,11 @@
   <p class="sub">選一個科目，開始闖關吧！</p>
   <p class="note">（請依照各學校教學進度內容，調整單元闖關順序）</p>
 
-  <div class="grid">
-    <a class="card social" href="https://kuog88.github.io/social-puzzle/">
-      <div class="icon">🗺️</div>
-      <div class="subject">社會</div>
-      <div class="go">開始玩 ▶</div>
-    </a>
-    <a class="card science" href="https://kuog88.github.io/science5-quest/">
-      <div class="icon">🔬</div>
-      <div class="subject">自然</div>
-      <div class="go">開始玩 ▶</div>
-    </a>
-    <a class="card math" href="https://kuog88.github.io/math5a-lab/">
-      <div class="icon">🧮</div>
-      <div class="subject">數學</div>
-      <div class="go">開始玩 ▶</div>
-    </a>
-    <a class="card chinese" href="https://kuog88.github.io/guoyu-island/">
-      <div class="icon">📖</div>
-      <div class="subject">國文</div>
-      <div class="go">開始玩 ▶</div>
-    </a>
-    <a class="card english" href="https://kuog88.github.io/galaxy-english/">
-      <div class="icon">🚀</div>
-      <div class="subject">英文</div>
-      <div class="go">開始玩 ▶</div>
-    </a>
-  </div>
+  <!-- 天空島嶼：點島嶼進入科目，萌寵會在吊橋上走來走去（islands.js） -->
+  <div id="sky-islands" role="navigation" aria-label="選擇科目"></div>
+  <noscript>
+    <p><a href="https://kuog88.github.io/social-puzzle/">社會</a>｜<a href="https://kuog88.github.io/science5-quest/">自然</a>｜<a href="https://kuog88.github.io/math5a-lab/">數學</a>｜<a href="https://kuog88.github.io/guoyu-island/">國文</a>｜<a href="https://kuog88.github.io/galaxy-english/">英文</a></p>
+  </noscript>
 
   <div class="duo">
     <a class="donate report" href="report.html">📊 家長報表</a>
@@ -150,6 +131,7 @@
   window.onKGPetChange = function () { if (!window.KGPet) return; var d = KGPet.get(), b = document.getElementById('pet-btn'), p = d.active && KGPet.pet(d.active); if (b) b.textContent = p ? '🐾 我的萌寵：' + p.name : '🐾 選一隻萌寵陪我'; };
   window.addEventListener('load', window.onKGPetChange);
 </script>
+<script src="islands.js?v=20261108"></script>
 <script src="https://kuog88.github.io/bgm.js" defer></script>
 </body>
 </html>
