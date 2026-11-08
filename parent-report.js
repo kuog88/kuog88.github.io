@@ -82,9 +82,37 @@
       if (res.stars !== undefined) L.stars = Math.max(L.stars || 0, +res.stars || 0);
       if (res.total) L.lastScore = (res.right || 0) + '/' + res.total;
       g.last = Date.now(); save(d);
+      if (+res.stars > 0) starPop(+res.stars);
     },
     open: function () { openPanel(); }
   };
+
+  // 過關／交卷得到星星時，畫面上方跳出大大的星星，讓孩子清楚知道「我拿到星星了！」（英文科不套用）
+  function starPop(n) {
+    if (/\/galaxy-english\//.test(location.pathname)) return;
+    try {
+      if (!document.getElementById('kg-starpop-css')) {
+        var st = document.createElement('style'); st.id = 'kg-starpop-css';
+        st.textContent = '#kg-starpop{position:fixed;left:0;right:0;top:9vh;z-index:2147483000;display:flex;flex-direction:column;align-items:center;pointer-events:none;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;animation:kgspOut .5s ease-in 2.9s forwards}' +
+          '#kg-starpop .row{display:flex;gap:6px;align-items:flex-end}' +
+          '#kg-starpop .s{font-size:min(26vw,120px);line-height:1;color:#ffc400;-webkit-text-stroke:3px #e08a00;text-shadow:0 6px 0 #d27800,0 0 30px rgba(255,220,80,.9);transform:scale(0);animation:kgspIn .55s cubic-bezier(.2,1.6,.4,1) forwards}' +
+          '#kg-starpop .s.half{width:.5em;overflow:hidden;display:inline-block}' +
+          '#kg-starpop .t{margin-top:8px;font-size:min(8vw,36px);font-weight:900;color:#fff;background:linear-gradient(#ffb300,#ff7a00);padding:8px 26px;border-radius:999px;border:4px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.25);transform:scale(0);animation:kgspIn .5s cubic-bezier(.2,1.6,.4,1) forwards}' +
+          '@keyframes kgspIn{0%{transform:scale(0) rotate(-30deg)}100%{transform:scale(1) rotate(0)}}' +
+          '@keyframes kgspOut{to{opacity:0;transform:translateY(-30px)}}' +
+          '@media (prefers-reduced-motion:reduce){#kg-starpop .s,#kg-starpop .t{animation:none;transform:none}}';
+        document.head.appendChild(st);
+      }
+      var old = document.getElementById('kg-starpop'); if (old) old.remove();
+      var box = document.createElement('div'); box.id = 'kg-starpop'; box.setAttribute('aria-live', 'polite');
+      var full = Math.floor(n), h = '';
+      for (var i = 0; i < full; i++) h += '<span class="s" style="animation-delay:' + (i * .22) + 's">★</span>';
+      if (n % 1) h += '<span class="s half" style="animation-delay:' + (full * .22) + 's">★</span>';
+      box.innerHTML = '<div class="row">' + h + '</div><div class="t" style="animation-delay:' + (Math.ceil(n) * .22 + .1) + 's">⭐ 得到 ' + n + ' 顆星！</div>';
+      document.body.appendChild(box);
+      setTimeout(function () { box.remove(); }, 3600);
+    } catch (e) {}
+  }
   window.KGReport = api;
 
   // ---------- 遊戲裡的「家長報表」按鈕：有紀錄或遊戲有呼叫過才出現 ----------

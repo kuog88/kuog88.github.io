@@ -49,13 +49,13 @@
     return { version: v, range: r };
   }
   function units(BOOK) {
-    var c = cur(BOOK), list = (BOOK.versions[c.version] || []).slice(), half = Math.ceil(list.length / 2);
+    var c = cur(BOOK), list = (BOOK.versions[c.version] || []).slice(), half = midOf(BOOK, c, list);
     return c.range === 'm1' ? list.slice(0, half) : c.range === 'm2' ? list.slice(half) : list;
   }
   function bar(el, BOOK, onChange) {
     if (!el) return; css();
     function draw() {
-      var c = cur(BOOK), list = BOOK.versions[c.version] || [], half = Math.ceil(list.length / 2);
+      var c = cur(BOOK), list = BOOK.versions[c.version] || [], half = midOf(BOOK, c, list);
       var sub = { m1: list.length ? '第 ' + list[0].no + '～' + list[half - 1].no + ' 單元' : '', m2: list.length > half ? '第 ' + list[half].no + '～' + list[list.length - 1].no + ' 單元' : '', all: '全部單元' };
       el.innerHTML = '<div id="kgv-bar"><span class="lb">📘 ' + GR[BOOK.grade] + '年級' + BOOK.sem + '學期</span>' +
         '<span class="grp">版本：' + ['nani', 'kang', 'han'].filter(function (v) { return BOOK.versions[v]; }).map(function (v) { return '<button type="button" class="' + v + (v === c.version ? ' on' : '') + '" data-v="' + v + '">' + PUB[v] + '</button>'; }).join('') + '</span>' +
@@ -67,8 +67,13 @@
     draw();
   }
   // 依版本組月考試卷：期中＝前半單元、期末＝後半、全冊
+  // 期中考考到第幾單元：BOOK.mid 可寫數字（各版本共用）或 {nani:4,…}；沒寫就前一半
+  function midOf(BOOK, c, list) {
+    var m = BOOK.mid; if (m && typeof m === 'object') m = m[c.version];
+    return m > 0 && m < list.length ? m : Math.ceil(list.length / 2);
+  }
   function examBank(BOOK, EB) {
-    var c = cur(BOOK), list = BOOK.versions[c.version] || [], half = Math.ceil(list.length / 2);
+    var c = cur(BOOK), list = BOOK.versions[c.version] || [], half = midOf(BOOK, c, list);
     var bu = function (arr) { var s = []; arr.forEach(function (u) { (u.bankUnits || []).forEach(function (x) { if (s.indexOf(x) < 0) s.push(x); }); }); return s; };
     var a = list.slice(0, half), b = list.slice(half);
     var rng = function (arr) { return arr.length ? '第 ' + arr[0].no + '～' + arr[arr.length - 1].no + ' 單元' : ''; };

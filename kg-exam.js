@@ -58,7 +58,10 @@
     '#kg-exam .btn.main{background:#8b5e34;color:#fff}' +
     '#kg-exam .res{text-align:center;margin:16px 0;display:grid;gap:6px;justify-items:center}' +
     '#kg-exam .res .sc{font-size:72px;font-weight:900;color:#d22;font-family:Georgia,"Times New Roman",serif;transform:rotate(-8deg);line-height:1}' +
-    '#kg-exam .stars{font-size:34px;letter-spacing:4px;color:#f2b400}' +
+    '#kg-exam .stars{font-size:64px;letter-spacing:6px;color:#ffc400;-webkit-text-stroke:2px #e08a00;text-shadow:0 4px 0 #d27800;line-height:1.1}' +
+    '#kg-exam .gotstar{font-size:20px;font-weight:900;color:#fff;background:linear-gradient(#ffb300,#ff7a00);padding:8px 20px;border-radius:999px;margin-top:6px}' +
+    '#kg-exam .rd{font:inherit;font-size:20px;line-height:1;margin:0 6px 0 0;padding:4px 8px;border:2px solid #f0b400;border-radius:999px;background:#fff8dc;cursor:pointer;vertical-align:middle}' +
+    '#kg-exam .rd.on{background:#ffd54a}' +
     '#kg-exam .it.right{background:#f3fbf5}#kg-exam .it.wrong{background:#fff4f4}' +
     '#kg-exam .mark{font-weight:800}#kg-exam .mark.r{color:#1e9b4b}#kg-exam .mark.w{color:#d22}' +
     '#kg-exam .exp{color:#555;font-size:15px;background:#faf7f0;border-radius:8px;padding:6px 10px}' +
@@ -77,6 +80,33 @@
 
   function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function plain(s) { return String(s || '').replace(/<svg[\s\S]*?<\/svg>/gi, '（圖）').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+  // 唸題目（一年級用）：題目＋選項；數學符號念成中文
+  var readU = null, readT = 0;
+  function sayable(t) {
+    return plain(t).replace(/（圖）/g, '').replace(/（\s*）|\(\s*\)|_{2,}|□/g, '多少').replace(/−|－/g, '減').replace(/\+|＋/g, '加').replace(/=|＝/g, '等於')
+      .replace(/×/g, '乘').replace(/÷/g, '除以').replace(/[「」『』]/g, '').replace(/[○⭕]/g, '圈').replace(/[✕×❌]/g, '叉');
+  }
+  function readQ(q, onend) {
+    if (!('speechSynthesis' in window) || !q) return;
+    var t = sayable(q.q), ty = typeOf(q);
+    if (ty === 'tf') t += '。對的打圈，錯的打叉。';
+    else if (ty === 'choice' && q.choices) t += '。選項有：' + q.choices.map(function (c, k) { return '第' + '一二三四五六'[k] + '個，' + sayable(c); }).join('；') + '。';
+    try {
+      var busy = speechSynthesis.speaking || speechSynthesis.pending;
+      if (busy) speechSynthesis.cancel();
+      clearTimeout(readT);
+      readT = setTimeout(function () {
+        try {
+          if (speechSynthesis.paused) speechSynthesis.resume();
+          var u = new SpeechSynthesisUtterance(t), vs = speechSynthesis.getVoices();
+          var v = vs.filter(function (x) { return /zh[-_]TW/i.test(x.lang); })[0] || vs.filter(function (x) { return /^zh/i.test(x.lang); })[0];
+          u.lang = 'zh-TW'; if (v) u.voice = v; u.rate = 0.85;
+          u.onend = u.onerror = function () { if (onend) onend(); };
+          readU = u; speechSynthesis.speak(u);
+        } catch (e) {}
+      }, busy ? 120 : 0);
+    } catch (e) {}
+  }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function norm(s) {
     return String(s === undefined || s === null ? '' : s).replace(/[０-９Ａ-Ｚａ-ｚ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 65248); })
@@ -179,13 +209,14 @@
     SEC.forEach(function (s) { (secs[s[0]] || []).forEach(function (q) { all.push(q); }); });
     if (!all.length) { alert('這份測驗卷的題目還在準備中！'); return; }
     var title = paper.title, full = (grade ? grade + ' ' : '') + title;
+    var readOn = /一年級/.test(full);   // 一年級看不懂字：每題旁邊有 🔊 唸題目
     var box = document.createElement('div'); box.id = 'kg-exam';
     // 數學試卷附浮動計算機（試卷設定 calculator: false 可關掉）
     var useCalc = paper.calculator !== undefined ? paper.calculator : /\/math5a-lab\//.test(location.pathname);
     document.body.appendChild(box);
     var started = Date.now(), picks = [], lastWallet = null, replayRec = paper.__rec || null;
     if (replayRec) { started = replayRec.started || replayRec.ts; picks = replayRec.picks.map(function (p) { return { a: p.a, ok: p.ok }; }); }
-    function close() { box.remove(); var cc = document.getElementById('kgx-calc'); if (cc) cc.remove(); document.documentElement.style.overflow = ''; }
+    function close() { try { speechSynthesis.cancel(); } catch (e) {} box.remove(); var cc = document.getElementById('kgx-calc'); if (cc) cc.remove(); document.documentElement.style.overflow = ''; }
     if (useCalc) addCalc();
     document.documentElement.style.overflow = 'hidden';
 
@@ -202,7 +233,7 @@
           '<div>答對 ' + right + ' / ' + all.length + ' 題・作答約 ' + mins + ' 分鐘</div>' +
           '<div style="color:#666">' + (stars === 2 ? '滿分！月考準備好了！' : stars === 1.5 ? '很棒！把錯的題目再看一次就更穩了。' : stars === 1 ? '及格了！錯的地方要訂正喔。' : '還不到 80 分，先看錯的題目和解說，再寫一張吧！') + '</div>' +
           '<div style="font-size:13px;color:#888">評分：80 分 ★、90 分 ★½、100 分 ★★</div>' +
-          (stars && lastWallet !== null ? '<div style="margin-top:6px;font-weight:800;color:#b07a00">⭐ 得到 ' + stars + ' 顆星，現在共有 ' + lastWallet + ' 顆！回首頁按「🐾 換萌寵」可以解鎖新萌寵。</div>' : '') + '</div>' +
+          (stars && lastWallet !== null ? '<div class="gotstar">⭐ 得到 ' + stars + ' 顆星，現在共有 ' + lastWallet + ' 顆！回首頁按「🐾 換萌寵」可以解鎖新萌寵。</div>' : '') + '</div>' +
           '<div class="filter"><button class="btn' + (onlyWrong ? '' : ' main') + '" data-f="all" type="button">全部題目</button><button class="btn' + (onlyWrong ? ' main' : '') + '" data-f="wrong" type="button">只看錯的（' + (all.length - right) + '）</button></div>';
       }
       SEC.forEach(function (s) {
@@ -213,7 +244,7 @@
           var i = all.indexOf(q); n++;
           var p = picks[i], ok = p && p.ok;
           if (done && onlyWrong && ok) return;
-          body += '<div class="it' + (done ? (ok ? ' right' : ' wrong') : '') + '" data-i="' + i + '"><div class="q"><span class="no">' + n + '.</span>' + (q.q || '') + '</div>';
+          body += '<div class="it' + (done ? (ok ? ' right' : ' wrong') : '') + '" data-i="' + i + '"><div class="q"><span class="no">' + n + '.</span>' + (readOn ? '<button type="button" class="rd" data-nozy title="唸題目" aria-label="唸題目">🔊</button>' : '') + (q.q || '') + '</div>';
           if (t === 'tf') body += '<div class="opts tf">' + [[true, '⭕'], [false, '❌']].map(function (o) {
             var cls = (p && p.a === o[0] ? ' sel' : '') + (done && q.answer === o[0] ? ' ans' : '');
             return '<button type="button" data-v="' + o[0] + '" class="' + cls + '"' + (done ? ' disabled' : '') + '>' + o[1] + '</button>'; }).join('') + '</div>';
@@ -241,6 +272,7 @@
       h += '</div><div class="bar">' + (done ? '<button class="btn main" data-again type="button">再寫一張（題目會換）</button><button class="btn" data-close type="button">關閉</button>'
         : '<span id="kge-left"></span><button class="btn main" data-submit type="button">交卷</button>') + '</div>';
       box.innerHTML = h;
+      if (readOn) box.querySelectorAll('.it .rd').forEach(function (b) { b.onclick = function (ev) { ev.stopPropagation(); var q = all[+b.closest('.it').dataset.i]; box.querySelectorAll('.rd.on').forEach(function (x) { x.classList.remove('on'); }); b.classList.add('on'); readQ(q, function () { b.classList.remove('on'); }); }; });
       box.querySelector('.x').onclick = function () { if (done || confirm('還沒交卷，確定要離開嗎？作答內容不會保存。')) close(); };
       if (done) {
         box.querySelector('[data-close]').onclick = close;

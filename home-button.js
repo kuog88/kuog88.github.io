@@ -29,7 +29,7 @@
   // 家長報表（國文有自己的報表，不載入）
   if (!window.KGReport && !/\/guoyu-island\//.test(location.pathname)) {
     var rs = document.createElement('script');
-    rs.src = 'https://kuog88.github.io/parent-report.js';
+    rs.src = 'https://kuog88.github.io/parent-report.js?v=20261108';
     document.head.appendChild(rs);
   }
   // 月考測驗卷與隨機出現的萌寵（英文由另一邊獨立管理，不載入）
