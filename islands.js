@@ -15,7 +15,7 @@
   css.textContent =
     '#sky-islands{position:relative;width:100%;max-width:1180px;margin:0 auto;overflow:visible;-webkit-tap-highlight-color:transparent}' +
     '#sky-islands svg.br{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}' +
-    '.isl{position:absolute;display:block;text-decoration:none;color:inherit;transform:translate(-50%,-50%);animation:islBob 6s ease-in-out infinite}' +
+    '.isl{position:absolute;z-index:1;display:block;text-decoration:none;color:inherit;transform:translate(-50%,-50%);animation:islBob 6s ease-in-out infinite}' +
     '.isl .art{position:relative;width:100%;aspect-ratio:1/1;filter:drop-shadow(0 18px 18px rgba(60,90,140,.25));transition:transform .25s}' +
     '.isl:hover .art,.isl:focus-visible .art{transform:scale(1.05)}.isl:focus-visible{outline:none}' +
     '.isl .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .9s ease-in-out,filter .9s}' +
@@ -119,13 +119,17 @@
     else { size = Math.min(300, Math.max(210, avail * 0.74)); gap = size * 1.14; W = size + gap * 4; }
     root.style.width = W + 'px'; root.style.maxWidth = 'none';
     hint.style.display = pano ? 'block' : 'none';
-    P = ISL.map(function (s, i) { return { x: size / 2 + gap * i, y: size * 0.6 + (i % 2 ? size * 0.13 : 0) }; });
-    var H = size * 1.32;
+    var top = size * 0.2;   // 島嶼上方留給熱氣球、彩虹等天空裝飾
+    P = ISL.map(function (s, i) { return { x: size / 2 + gap * i, y: top + size * 0.6 + (i % 2 ? size * 0.13 : 0) }; });
+    var H = top + size * 1.32;
     root.style.height = H + 'px';
     els.forEach(function (a, i) { a.style.width = size + 'px'; a.style.left = P[i].x + 'px'; a.style.top = P[i].y + 'px'; });
     drawBridges();
+    if (window.KGSky) KGSky.placeDecor(root, P, size);
     if (walker) walker.style.setProperty('--pw', Math.round(size * 0.27) + 'px');
   }
+  // 給天空城商店用：換吊橋、裝飾物後重畫
+  window.KGIsland = { redraw: function () { if (P.length) { drawBridges(); if (window.KGSky) KGSky.placeDecor(root, P, size); } } };
   // 每座島的走道：從左緣（或上一座橋接點）到右緣，高度在草地表面
   function deck(i) { return P[i].y - size * 0.06; }
   function anchors(i) {
@@ -137,8 +141,19 @@
     var goRight = P[i + 1].x > P[i].x;
     return goRight ? [A.r, B.l] : [A.l, B.r];
   }
+  // 吊橋樣式（天空城商店買的）：木板兩色、木板框、扶手繩、吊索、木樁、特效
+  var BST = {
+    wood: { pl: ['#c08a52', '#a8723f'], st: '#7a4f27', rope: '#8a5a2b', hang: '#a0703f', post: '#8a5a2b' },
+    flower: { pl: ['#c08a52', '#a8723f'], st: '#7a4f27', rope: '#4f9a3c', hang: '#6bb34f', post: '#8a5a2b', fl: ['#ff8fc7', '#fff', '#ffd93d'] },
+    candy: { pl: ['#ff9ec7', '#ffffff'], st: '#e06b9d', rope: '#ff6fa8', hang: '#ffb3d1', post: '#ff6fa8' },
+    rainbow: { pl: ['#ff6b6b', '#ffa94d', '#ffd93d', '#69db7c', '#4dabf7', '#9775fa'], st: 'rgba(255,255,255,.8)', rope: '#ffffff', hang: '#ffffff', post: '#9775fa', glow: 'rgba(255,255,255,.9)' },
+    crystal: { pl: ['#d6f8ff', '#8fe3ff'], st: '#4fc3e8', rope: '#bff4ff', hang: '#d6f8ff', post: '#6fd3f0', glow: 'rgba(120,220,255,.95)', op: 0.85 },
+    gold: { pl: ['#ffe066', '#f2b400'], st: '#b8860b', rope: '#d4a017', hang: '#e8b923', post: '#c99a06', glow: 'rgba(255,215,80,.95)' }
+  };
   function drawBridges() {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var B = BST[window.KGSky ? KGSky.bridgeStyle() : 'wood'] || BST.wood;
+    svg.style.filter = B.glow ? 'drop-shadow(0 0 5px ' + B.glow + ')' : '';
     for (var i = 0; i < ISL.length - 1; i++) {
       var e = bridgeEnds(i), p = e[0], q = e[1];
       var len = Math.hypot(q.x - p.x, q.y - p.y), sag = Math.max(12, len * 0.12);
@@ -152,28 +167,33 @@
         var ang = Math.atan2(dy, dx) * 180 / Math.PI;
         var r = document.createElementNS(NS, 'rect');
         r.setAttribute('x', -6); r.setAttribute('y', -3); r.setAttribute('width', 12); r.setAttribute('height', 7); r.setAttribute('rx', 1.5);
-        r.setAttribute('fill', k % 2 ? '#c08a52' : '#a8723f'); r.setAttribute('stroke', '#7a4f27'); r.setAttribute('stroke-width', 1);
+        r.setAttribute('fill', B.pl[k % B.pl.length]); r.setAttribute('stroke', B.st); if (B.op) r.setAttribute('fill-opacity', B.op); r.setAttribute('stroke-width', 1);
         r.setAttribute('transform', 'translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
         g.appendChild(r);
         if (k % 2 === 0 && k && k < n) {   // 吊索
           var v = document.createElementNS(NS, 'line');
           v.setAttribute('x1', x.toFixed(1)); v.setAttribute('y1', (y - 2).toFixed(1)); v.setAttribute('x2', x.toFixed(1)); v.setAttribute('y2', (y - 22).toFixed(1));
-          v.setAttribute('stroke', '#a0703f'); v.setAttribute('stroke-width', 1.4); g.insertBefore(v, g.firstChild);
+          v.setAttribute('stroke', B.hang); v.setAttribute('stroke-width', 1.4); g.insertBefore(v, g.firstChild);
         }
       }
       // 兩條扶手繩
       [-16, -26].forEach(function (off, j) {
         var path = document.createElementNS(NS, 'path');
         path.setAttribute('d', 'M' + p.x + ',' + (p.y + off) + ' Q' + mx + ',' + (my + off + (j ? 6 : 3)) + ' ' + q.x + ',' + (q.y + off));
-        path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#8a5a2b'); path.setAttribute('stroke-width', j ? 2 : 2.6); path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('fill', 'none'); path.setAttribute('stroke', B.rope); path.setAttribute('stroke-width', j ? 2 : 2.6); path.setAttribute('stroke-linecap', 'round');
         g.appendChild(path);
       });
       // 橋頭木樁
       [p, q].forEach(function (o) {
         var post = document.createElementNS(NS, 'rect');
         post.setAttribute('x', o.x - 3.5); post.setAttribute('y', o.y - 30); post.setAttribute('width', 7); post.setAttribute('height', 34); post.setAttribute('rx', 3);
-        post.setAttribute('fill', '#8a5a2b'); g.appendChild(post);
+        post.setAttribute('fill', B.post); g.appendChild(post);
       });
+      if (B.fl) for (var f = 1; f < 12; f++) {   // 花藤：扶手繩上的小花
+        var tt = f / 12, fx = (1 - tt) * (1 - tt) * p.x + 2 * (1 - tt) * tt * mx + tt * tt * q.x, fy = (1 - tt) * (1 - tt) * (p.y - 16) + 2 * (1 - tt) * tt * (my - 13) + tt * tt * (q.y - 16);
+        var fc = document.createElementNS(NS, 'circle'); fc.setAttribute('cx', fx.toFixed(1)); fc.setAttribute('cy', fy.toFixed(1)); fc.setAttribute('r', 3.6);
+        fc.setAttribute('fill', B.fl[f % B.fl.length]); fc.setAttribute('stroke', '#e0609b'); fc.setAttribute('stroke-width', .8); g.appendChild(fc);
+      }
       g.dataset.p = JSON.stringify([p, { x: mx, y: my }, q]);
       svg.appendChild(g);
     }
