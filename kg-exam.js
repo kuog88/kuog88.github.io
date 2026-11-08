@@ -88,9 +88,10 @@
   }
   function readQ(q, onend) {
     if (!('speechSynthesis' in window) || !q) return;
-    var t = sayable(q.q), ty = typeOf(q);
-    if (ty === 'tf') t += '。對的打圈，錯的打叉。';
-    else if (ty === 'choice' && q.choices) t += '。選項有：' + q.choices.map(function (c, k) { return '第' + '一二三四五六'[k] + '個，' + sayable(c); }).join('；') + '。';
+    var t = sayable(q.q).replace(/[。．.，,\s]+$/, ''), ty = typeOf(q);
+    if (!/[？?！!]$/.test(t)) t += '。';
+    if (ty === 'tf') t += '對的打圈，錯的打叉。';
+    else if (ty === 'choice' && q.choices) t += '選項有：' + q.choices.map(function (c, k) { return '第' + '一二三四五六'[k] + '個，' + sayable(c); }).join('；') + '。';
     try {
       var busy = speechSynthesis.speaking || speechSynthesis.pending;
       if (busy) speechSynthesis.cancel();
