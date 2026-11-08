@@ -75,6 +75,7 @@
   .duo { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 36px; }
   .duo .donate.report { margin-top: 0; }
   .donate.wb { color: #e2574c; border-color: #e2574c; box-shadow: 0 6px 0 #e2574c; }
+  .donate.move { color: #2a7d6f; border-color: #7cc7bb; box-shadow: 0 6px 0 #7cc7bb; font-size: 17px; margin-top: 18px; }
   .donate.sky { color: #6c4ad6; border-color: #8a6cff; box-shadow: 0 6px 0 #8a6cff; }
   .donate.pet { color: #b5651d; border-color: #e0954a; box-shadow: 0 6px 0 #e0954a; }
   .duo + .donate { margin-top: 22px; }
@@ -117,6 +118,7 @@
     <button type="button" id="sky-btn" class="donate report sky" onclick="window.KGSky && KGSky.open()">💎 天空城商店</button>
     <button type="button" id="pet-btn" class="donate report pet" onclick="window.KGPet && KGPet.picker()">🐾 選一隻萌寵陪我</button>
   </div>
+  <button type="button" class="donate report move" onclick="window.KGBackup && KGBackup.open()">📦 進度搬家（換手機、換平板）</button>
   <!-- 贊助：點跪拜小人就到 IG -->
   <a class="sponsor" href="https://www.instagram.com/xt4photo?obrf=Z3o2Z2Vna25sa2Vw&amp;utm_source=qr" target="_blank" rel="noopener" title="金主贊助（到 IG 找我）">
     <span class="kneel" aria-hidden="true">🙇</span>
@@ -134,6 +136,7 @@
   window.addEventListener('load', window.onKGPetChange);
 </script>
 <script src="kg-sky.js?v=20261108c"></script>
+<script src="kg-backup.js?v=20261108"></script>
 <script src="islands.js?v=20261108e"></script>
 <script src="https://kuog88.github.io/bgm.js" defer></script>
 </body>
