@@ -301,7 +301,7 @@
           var btn = !have ? (bal >= it.price ? '<button type="button" data-buy="' + it.id + '">💎 ' + it.price + ' 買下</button>' : '<button type="button" disabled>💎 ' + it.price + '</button><span class="need">還差 ' + (it.price - bal) + ' 晶幣</span>')
             : tab === 'decor' ? '<button type="button" class="' + (using ? 'off' : 'use') + '" data-tg="' + it.id + '">' + (using ? '收起來' : '放到天空城') + '</button>'
             : using ? '<button type="button" disabled>使用中</button>' : '<button type="button" class="use" data-use="' + it.id + '">換上</button>';
-          return '<div class="it' + (it.legend ? ' legend' : '') + '">' + pv + '<div class="nm">' + it.name + '</div>'  (it.desc ? '<div class="need" style="color:#7a6aa8">' + it.desc + '</div>' : '') + (have ? '' : '<div class="pr">' + (it.price ? '💎 ' + it.price : '免費') + '</div>') + btn + '</div>';
+          return '<div class="it' + (it.legend ? ' legend' : '') + '">' + pv + '<div class="nm">' + it.name + '</div>' + (it.desc ? '<div class="need" style="color:#7a6aa8">' + it.desc + '</div>' : '') + (have ? '' : '<div class="pr">' + (it.price ? '💎 ' + it.price : '免費') + '</div>') + btn + '</div>';
         }).join('') + '</div>';
       }
       h += '</div>';
