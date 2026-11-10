@@ -9,6 +9,8 @@
   if (window.KGPet) return;
   var BASE = /^(localhost|127.0.0.1)$/.test(location.hostname) ? '/kuog88.github.io/' : 'https://kuog88.github.io/';
   var KEY = 'kg-pet-v1';
+  // 只有在首頁（和萌寵頁）才到處跑；在闖關畫面固定在右下角，不擋題目
+  var HOME = /(^|\/kuog88\.github\.io)\/(index\.html|pets\.html)?$/.test(location.pathname);
 
   // ---------- 規則 ----------
   var RULE = {
@@ -22,9 +24,9 @@
   var PETS = [
     { id: 'blue', name: '波波', desc: '戴蛙鏡的藍毛球，最喜歡數字和拼圖。', price: 20, star: 0,
       stages: [{ img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }] },
-    { id: 'green', name: '嫩芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40, star: 2,
+    { id: 'green', name: '芽芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40, star: 2,
       stages: [{ img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }] },
-    { id: 'orange', name: '紫紫', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40, star: 2,
+    { id: 'orange', name: '樂樂', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40, star: 2,
       stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] },
     // 贊助解鎖的萌寵：有 6 種姿勢（poses），會招手、寫作業、比讚、想事情、歡呼、睡覺，而且一直誇獎小朋友
     { id: 'honey', name: '蜜蜜', desc: '頭上長小芽、背著透明翅膀的黃毛球，最愛誇獎認真的小朋友！', price: 0, star: 0,
@@ -70,6 +72,57 @@
     ['哪一個字大家都念「錯」？', '就是「錯」這個字！'], ['什麼東西越生氣越大？', '脾氣！'], ['什麼東西有頭沒有腳？', '火柴棒！'],
     ['小明的爸爸有三個兒子：大毛、二毛，老三叫什麼？', '小明啊！'], ['什麼蛋不能吃？', '笨蛋～但你不是喔！'],
     ['什麼動物最會寫字？', '小鴨子，因為牠會「呱呱呱」（寫寫寫）～好啦這個有點冷！']];
+
+  // ---------- 每隻萌寵自己的名字與詞庫 ----------
+  // title 稱號、hi 打招呼、cheer 打氣、jokes 專屬笑話 [問, 答]、facts 小知識、bye 暫時離開、
+  // wake 睡醒、sleepTxt 睡覺、writeLines 陪寫作業、thinkTxt 想事情、tap 被點一下
+  var LINES = {
+    blue: { title: '數字小隊長',
+      hi: ['嗶嗶！波波報到！今天要解開幾道謎題？', '波波的蛙鏡擦亮了，準備出發！', '1、2、3，波波來陪你闖關啦！'],
+      cheer: ['答對一題，加 1 分！波波幫你記著！', '一步一步拆開來，題目就變簡單了！', '先看清楚題目，再動手算～', '算完記得檢查一次，波波都這樣做！',
+        '拼圖要一塊一塊拼，題目也一樣！', '你的大腦正在做體操，1、2、1、2！', '錯一題沒關係，找到錯在哪才是最厲害的！', '波波的蛙鏡看到你超專心！',
+        '加油！你離滿分只差一點點！', '慢慢算比快快算錯更好喔！'],
+      jokes: [['什麼數字最聽話？', '一百，百依百順！'], ['哪兩個數字長得一模一樣？', '1 和 1，雙胞胎！'], ['數學課本為什麼愁眉苦臉？', '因為它有好多「問題」！'],
+        ['哪個數字最懶惰？', '0，因為它什麼都不做～'], ['時鐘為什麼總是很忙？', '因為它一直在趕時間！']],
+      facts: ['波波小知識：0 是印度人發明的喔！', '波波小知識：一打是 12 個！', '波波小知識：蜂巢的格子是六邊形，最省材料！', '波波小知識：把 1 加到 10，答案是 55！'],
+      bye: ['波波去拼一下拼圖，等等回來！', '嗶嗶～波波先去巡邏，馬上回來！'],
+      tap: ['嗶！你點到波波的蛙鏡了！', '波波轉一圈給你看～', '要不要跟波波一起數到 10？'] },
+    green: { title: '自然觀察家',
+      hi: ['芽芽的三隻眼睛都看到你了！嗨～', '咕嚕咕嚕，芽芽從草地上跑來囉！', '今天天氣好嗎？芽芽來陪你探險！'],
+      cheer: ['種子要慢慢發芽，學習也是喔！', '仔細觀察，答案就藏在題目裡！', '芽芽的觸角感覺到你好認真！', '多問幾個「為什麼」，你就是小科學家！',
+        '小樹每天長高一點點，你也是！', '答錯就像下雨，雨停了會長得更好！', '深呼吸，像小葉子一樣放輕鬆～', '芽芽相信你，你一定可以！',
+        '你今天又長出一片新葉子了！🌱', '用三隻眼睛看清楚，再作答喔！'],
+      jokes: [['什麼瓜不能吃？', '傻瓜！但你不是喔～'], ['什麼布剪不斷？', '瀑布！'], ['哪種花最愛說話？', '喇叭花！'],
+        ['毛毛蟲過河，要怎麼過？', '變成蝴蝶飛過去！'], ['什麼東西越洗越髒？', '水！']],
+      facts: ['芽芽小知識：植物靠葉子做光合作用！', '芽芽小知識：蜜蜂會跳舞告訴同伴花在哪裡！', '芽芽小知識：章魚有三顆心臟！', '芽芽小知識：竹子一天可以長高好幾十公分！', '芽芽小知識：蝴蝶用腳嚐味道！'],
+      bye: ['芽芽去曬一下太陽，等等回來！', '咕嚕～芽芽去看看花開了沒，馬上回來！'],
+      tap: ['哎呀！你摸到芽芽的觸角了，好癢！', '芽芽的三隻眼睛眨一眨～', '你發現芽芽了！真會觀察！'] },
+    orange: { title: '故事旅行家',
+      hi: ['♪ 樂樂戴上耳機，來陪你冒險囉！', '嗨嗨！樂樂今天想聽你闖關的故事！', '下一站：闖關大冒險！樂樂出發！'],
+      cheer: ['每一關都是故事的新篇章！', '主角遇到困難，最後都會成功的！', '樂樂幫你放一首加油歌 ♪', '讀題目就像讀故事，要看清楚喔！',
+        '你就是這個故事的英雄！', '答錯是故事裡的小轉折，接下來更精彩！', '樂樂的耳機聽到你在努力的聲音了！', '慢慢讀，每個字都很重要喔～',
+        '等你闖完關，樂樂帶你去環遊世界！', '加油！故事的結局一定很棒！'],
+      jokes: [['什麼書在書店買不到？', '秘書！'], ['什麼歌大家都會唱？', '生日快樂歌！'], ['什麼門永遠關不起來？', '球門！'],
+        ['哪一個字大家都念「錯」？', '就是「錯」這個字！'], ['什麼東西明明是你的，別人卻用得比你多？', '你的名字！']],
+      facts: ['樂樂小知識：世界上最高的山是聖母峰！', '樂樂小知識：地球上有七大洲！', '樂樂小知識：埃及有好大的金字塔！', '樂樂小知識：臺灣最高的山是玉山！', '樂樂小知識：企鵝住在南極，北極沒有企鵝喔！'],
+      bye: ['樂樂去換一首歌，等等回來！', '♪ 樂樂去旅行一下，馬上回來說故事！'],
+      tap: ['♪ 啦啦啦～你點到樂樂了！', '樂樂的耳機掉了一下，嘿嘿！', '要不要聽樂樂唱一句歌？啦～'] },
+    honey: { title: '誇誇小蜜蜂',
+      hi: ['嗨～蜜蜜來陪你囉！', '哈囉！今天也一起加油吧！', '蜜蜜好想你喔～'],
+      facts: ['蜜蜜小知識：蜜蜂要拜訪好多朵花才能做一點點蜂蜜！', '蜜蜜小知識：蜂蜜放很久都不會壞喔！'],
+      bye: ['蜜蜜去採一下花蜜，等等回來誇你！', '蜜蜜飛去喝口水，馬上回來～'],
+      writeLines: ['我也跟你一起寫作業～', '我們一起把題目看清楚！', '蜜蜜也在認真做筆記喔！'],
+      wake: ['啊！我醒了！你還在努力耶，好棒！', '蜜蜜睡飽了！我們繼續加油～'],
+      sleepTxt: '呼…呼…（點我叫醒蜜蜜）', thinkTxt: '嗯…你在想什麼呢？你一定想得出來！' },
+    lion: { title: '熱血教練',
+      hi: ['雷歐駕到！今天一起拿冠軍！😎', '吼～雷歐來幫你打氣啦！', '準備好了嗎？跟雷歐一起衝！'],
+      facts: ['雷歐小知識：獅子是唯一成群生活的大貓！', '雷歐小知識：獅子的吼聲 8 公里外都聽得到！'],
+      bye: ['雷歐去跑兩圈，馬上回來！', '雷歐去練一下肌肉，等等見！💪'] }
+  };
+  PETS.forEach(function (p) {
+    var L = LINES[p.id] || {};
+    for (var k in L) if (!(k in p)) p[k] = L[k];
+  });
 
   // ---------- 資料 ----------
   function load() {
@@ -160,7 +213,7 @@
     '#kg-pet.a-spin img{animation:kgpSpin 1s ease-in-out}' +
     '#kg-pet.a-wiggle img{animation:kgpWiggle .5s ease-in-out 3}' +
     '#kg-pet.a-heart img{animation:kgpPop .6s ease-in-out 2}' +
-    '#kg-pet.kg-dodge{opacity:.3;pointer-events:none}' +
+    '#kg-pet.fixed{transition:none}#kg-pet.kg-dodge{opacity:.3;pointer-events:none}' +
     '#kg-pet.p-wave img{animation:kgpWave .45s ease-in-out 5}' +
     '#kg-pet.p-cheer img{animation:kgpJump .6s ease-in-out 2}' +
     '#kg-pet.p-sleep img{animation:kgpBreath 2.6s ease-in-out infinite}' +
@@ -201,14 +254,14 @@
       if (sd.visitor) { el.hidden = true; schedule(8000 + Math.random() * 10000, true); }
       else {
         chatter();
-        if (sd.p.poses) setTimeout(function () { if (el && !el.hidden) { pose('wave', 0); say(pick(['嗨～蜜蜜來陪你囉！', '哈囉！今天也一起加油吧！', '蜜蜜好想你喔～'])); } }, 1200);
+        setTimeout(function () { if (el && !el.hidden) { if (sd.p.poses) pose('wave', 0); say(pick(sd.p.hi || CHEER)); } }, 1200);
       }
     }
     if (!sd.visitor && el.hidden) { clearTimeout(visitT); el.hidden = false; chatter(); }
     var key = sd.p.id + sd.s;
     if (key !== curKey) { curKey = key; img.src = url(sd.st.img); }
-    el.className = (el.classList.contains('left') ? 'left ' : '') + 's' + sd.s;
-    el.title = sd.p.name + '（' + STAGE_NAME[sd.s - 1] + '）：點我一下！';
+    el.className = (el.classList.contains('left') ? 'left ' : '') + 's' + sd.s + (HOME ? '' : ' fixed');
+    el.title = (sd.p.title ? sd.p.title + ' ' : '') + sd.p.name + '（' + STAGE_NAME[sd.s - 1] + '）：點我一下！';
     img.alt = sd.p.name;
     var cr = el.querySelector('.crown');
     if (sd.s >= 4 && !cr) el.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
@@ -218,6 +271,7 @@
   function wander() {
     if (!el) return;
     clearTimeout(moveT);
+    if (!HOME) { pin(); return; }
     if (!playing) {
       var w = innerWidth, h = innerHeight, size = el.offsetWidth || 80;
       var zone = Math.random();
@@ -231,6 +285,15 @@
     }
     moveT = setTimeout(wander, 4500 + Math.random() * 4000);
   }
+  // 闖關畫面：固定在右下角（音樂按鈕上方），不會走來走去
+  function pin() {
+    if (!el) return;
+    var size = el.offsetWidth || 70;
+    el.classList.remove('left');
+    el.style.left = Math.max(0, innerWidth - size - 8) + 'px';
+    el.style.top = Math.max(60, innerHeight - size - 60) + 'px';
+  }
+  addEventListener('resize', function () { if (!HOME) pin(); });
   var sayT = null;
   function say(t, ms) {
     clearTimeout(sayT); bubble.textContent = t; bubble.classList.add('on');
@@ -254,7 +317,8 @@
     if (r < 0.2) {          // 笑話：先想一想，再歡呼說答案
       var j = pick(JOKE); pose('think', 0); say(j[0], 2600);
       setTimeout(function () { if (el && !sleeping) { pose('cheer', 3400); say(j[1], 3200); } }, 2700);
-    } else if (r < 0.32) { pose('write', 4000); say(pick(sd.p.writeLines || ['我也跟你一起寫作業～', '我們一起把題目看清楚！', '蜜蜜也在認真做筆記喔！']), 3000); }
+    } else if (r < 0.32) { pose('write', 4000); say(pick(sd.p.writeLines || ['我也跟你一起寫作業～']), 3000); }
+    else if (r < 0.42 && sd.p.facts) { pose('think', 3600); say(pick(sd.p.facts), 3400); }
     else { pose(pick(['thumb', 'cheer', 'wave', 'thumb'].concat(sd.p.extra || [])), 3200); say(pick(sd.p.praise), 3000); }
   }
   // 太久沒動就睡著，小朋友一動就醒來
@@ -263,12 +327,12 @@
     if (sleeping) {
       sleeping = false;
       var w = hasPoses();
-      if (w && el && !el.hidden) { pose('cheer', 2600); say(pick(w.p.wake || ['啊！我醒了！你還在努力耶，好棒！', '蜜蜜睡飽了！我們繼續加油～']), 3000); }
+      if (w && el && !el.hidden) { pose('cheer', 2600); say(pick(w.p.wake || ['我醒了！我們繼續加油～']), 3000); }
     }
     idleT = setTimeout(function () {
       var z = hasPoses();
       if (!z || !el || el.hidden) return;
-      sleeping = true; pose('sleep', 0); say(z.p.sleepTxt || '呼…呼…（點我叫醒蜜蜜）', 4000);
+      sleeping = true; pose('sleep', 0); say(z.p.sleepTxt || '呼…呼…（點我叫醒' + z.p.name + '）', 4000);
     }, 120000);
   }
   ['pointerdown', 'keydown'].forEach(function (t) { addEventListener(t, idleReset, true); });
@@ -279,10 +343,12 @@
     if (!el || el.hidden) return;
     var sp = hasPoses();
     if (sp) { if (!sleeping) poseTalk(sp); return; }
-    if (Math.random() < 0.45) {
-      var j = JOKE[Math.floor(Math.random() * JOKE.length)];
+    var p = stageData().p, r = Math.random();
+    if (r < 0.35) {
+      var j = pick(p.jokes && Math.random() < 0.75 ? p.jokes : JOKE);
       say(j[0], 2600); setTimeout(function () { if (el) say(j[1], 3200); }, 2700);
-    } else say(CHEER[Math.floor(Math.random() * CHEER.length)]);
+    } else if (r < 0.55 && p.facts) say(pick(p.facts), 3400);
+    else say(pick(p.cheer && Math.random() < 0.8 ? p.cheer : CHEER));
   }
   var talkT = null, visitT = null;
   function chatter() { clearTimeout(talkT); var fast = !!hasPoses(); talkT = setTimeout(function () { talk(); chatter(); }, fast ? 11000 + Math.random() * 8000 : 16000 + Math.random() * 12000); }
@@ -294,11 +360,11 @@
       if (show) {
         visitor = PETS[Math.floor(Math.random() * PETS.length)]; curKey = ''; refresh();
         el.hidden = false; wander();
-        setTimeout(function () { say(['嗨！我來陪你讀書囉～', '哈囉！我路過來幫你加油！', '嘿嘿，偷偷來看你在做什麼～'][Math.floor(Math.random() * 3)]); }, 900);
+        setTimeout(function () { say(pick(visitor.hi || ['嗨！我來陪你讀書囉～'])); }, 900);
         chatter();
         schedule(40000 + Math.random() * 30000, false);
       } else {
-        say('我先去散步，等一下再來找你！', 2200);
+        say(pick(visitor.bye || ['我先去散步，等一下再來找你！']), 2200);
         clearTimeout(talkT);
         setTimeout(function () { if (el) el.hidden = true; }, 2300);
         schedule(90000 + Math.random() * 90000, true);
@@ -312,7 +378,7 @@
       playing = true; sleeping = false;
       var seq = sd.p.clickSeq || ['cheer', 'thumb', 'wave', 'think'], nm = seq[animIdx++ % seq.length];
       pose(nm, 2600);
-      say(nm === 'think' ? (sd.p.thinkTxt || '嗯…你在想什麼呢？你一定想得出來！') : pick(sd.p.praise), 2800);
+      say(nm === 'think' ? (sd.p.thinkTxt || '嗯…慢慢想，你一定想得出來！') : pick(sd.p.praise), 2800);
       (sd.p.fx || ['💛', '✨', '💛']).forEach(function (e, i) { setTimeout(function () { var f = document.createElement('span'); f.className = 'fx'; f.textContent = e; f.style.marginLeft = (i - 1) * 18 + 'px'; el.appendChild(f); setTimeout(function () { f.remove(); }, 1300); }, i * 180); });
       setTimeout(function () { playing = false; }, 1500);
       return;
@@ -320,7 +386,7 @@
     playing = true;
     var anims = sd.st.anims && sd.st.anims.length ? sd.st.anims : null;
     var done = function () { playing = false; el.classList.remove('a-jump', 'a-spin', 'a-wiggle', 'a-heart'); img.src = url(sd.st.img); };
-    talk();
+    if (sd.p.tap && Math.random() < 0.5) say(pick(sd.p.tap)); else talk();
     if (anims) {
       var a = anims[animIdx++ % anims.length], src = typeof a === 'string' ? a : a.src, ms = (typeof a === 'object' && a.ms) || 2000;
       img.src = url(src) + (url(src).indexOf('?') < 0 ? '?t=' : '&t=') + Date.now(); // 從頭播放
@@ -348,7 +414,7 @@
       '#kg-pick .pc:hover,#kg-pick .pc:focus-visible{transform:translateY(-4px);border-color:#e0954a;outline:none}' +
       '#kg-pick .pc.on{border-color:#e0954a;box-shadow:0 6px 0 #f3c08a}' +
       '#kg-pick .pc img{width:120px;height:120px;object-fit:contain;animation:kgpBob 1.6s ease-in-out infinite;filter:drop-shadow(0 6px 6px rgba(0,0,0,.2))}' +
-      '#kg-pick .pc b{font-size:22px}#kg-pick .pc small{color:#6b6b6b;line-height:1.5}' +
+      '#kg-pick .pc .ttl{font-size:13px;font-weight:800;color:#b5651d;background:#fff1dc;border-radius:999px;padding:2px 10px;margin-bottom:-4px}#kg-pick .pc b{font-size:22px}#kg-pick .pc small{color:#6b6b6b;line-height:1.5}' +
       '#kg-pick .skip{margin-top:14px;font:inherit;background:none;border:none;color:#8a7a66;text-decoration:underline;cursor:pointer}' +
       '#kg-pick .pc.lock{cursor:not-allowed;background:#eef0f4;border-style:dashed;border-color:#c9ced8}' +
       '#kg-pick .pc.lock:hover{transform:none;border-color:#c9ced8}' +
@@ -371,7 +437,7 @@
       '<div class="ps">' + PETS.map(function (p) {
         var own = d.owned[p.id] || !p.star, enough = d.stars >= p.star;
         var tag = p.sponsor ? '<span class="spn">' + p.sponsor + '</span>' : own ? '' :'<span class="need">' + (enough ? '🔓 用 ' + p.star + ' 顆星解鎖' : '🔒 需要 ' + p.star + ' 顆星（還差 ' + Math.round((p.star - d.stars) * 10) / 10 + ' 顆）') + '</span>';
-        return '<button class="pc' + (d.active === p.id ? ' on' : '') + (own ? '' : enough ? ' can' : ' need') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt=""><b>' + p.name + '</b><small>' + p.desc + '</small>' + tag + '</button>';
+        return '<button class="pc' + (d.active === p.id ? ' on' : '') + (own ? '' : enough ? ' can' : ' need') + '" type="button" data-id="' + p.id + '"><img src="' + url(p.stages[0].img) + '" alt="">' + (p.title ? '<span class="ttl">' + p.title + '</span>' : '') + '<b>' + p.name + '</b><small>' + p.desc + '</small>' + tag + '</button>';
       }).join('') +
       // 還沒開放的萌寵：黑色剪影＋問號，不能點
       LOCKED.map(function (src, k) {
@@ -390,7 +456,7 @@
         }
         api.choose(p.id); close();
         if (typeof window.onKGPetChange === 'function') window.onKGPetChange();
-        setTimeout(function () { if (el) { if (p.poses) pose('wave', 0); say('我是' + p.name + '！我們一起去闖關吧！', 3000); } }, 500);
+        setTimeout(function () { if (el) { if (p.poses) pose('wave', 0); say('我是' + (p.title || '') + p.name + '！我們一起去闖關吧！', 3000); } }, 500);
       };
     });
     w.querySelector('.skip').onclick = function () { if (auto) { var d2 = load(); d2.skipPick = true; save(d2); } close(); };
@@ -410,7 +476,7 @@
       if (t.closest && t.closest('button,a[href],input,select,textarea,[role="button"],[onclick],[draggable="true"]')) {
         // 先讓點擊穿過去，再走到別的地方
         el.classList.add('kg-dodge');
-        if (Date.now() - lastDodgeMove > 3500) { lastDodgeMove = Date.now(); wander(); }
+        if (HOME && Date.now() - lastDodgeMove > 3500) { lastDodgeMove = Date.now(); wander(); }
         break;
       }
     }
