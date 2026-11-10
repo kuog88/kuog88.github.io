@@ -27,7 +27,7 @@
     '#isl-walker{position:absolute;z-index:5;width:var(--pw,64px);height:var(--pw,64px);transform:translate(-50%,-92%);cursor:pointer;pointer-events:auto}' +
     '#isl-walker img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 4px rgba(0,0,0,.25));animation:islStep .42s ease-in-out infinite;transform-origin:50% 100%}' +
     '#isl-walker.rest img{animation:islBreath 1.8s ease-in-out infinite}' +
-    '#isl-walker .bub{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;background:#fff;color:#333;border:2px solid #ffb84d;border-radius:12px;padding:3px 10px;font:800 14px "Microsoft JhengHei","PingFang TC",sans-serif;box-shadow:0 3px 8px rgba(0,0,0,.15);opacity:0;transition:opacity .25s;pointer-events:none}' +
+    '#isl-walker .bub{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;white-space:normal;width:max-content;max-width:min(220px,64vw);text-align:center;line-height:1.4;background:#fff;color:#333;border:2px solid #ffb84d;border-radius:12px;padding:3px 10px;font:800 14px "Microsoft JhengHei","PingFang TC",sans-serif;box-shadow:0 3px 8px rgba(0,0,0,.15);opacity:0;transition:opacity .25s;pointer-events:none}' +
     '#isl-walker .bub.on{opacity:1}' +
     '.cloud{position:absolute;pointer-events:none;background:#fff;border-radius:999px;opacity:.75;filter:blur(2px);animation:islCloud linear infinite}' +
     '.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}' +
@@ -211,7 +211,7 @@
     var K = window.KGPet; if (!K) return { src: 'pets/honey/wave.webp', walk: 'pets/honey/cheer.webp', name: '蜜蜜' };
     var d = K.get(), p = (d.active && K.pet(d.active)) || K.pet('honey') || K.PETS[0];
     var st = p.stages[0].img;
-    return { src: K.url(p.poses ? p.poses.wave : st), walk: K.url(p.poses ? (p.poses.run || p.poses.cheer) : st), name: p.name };
+    return { src: K.url(p.poses ? p.poses.wave : st), walk: K.url(p.poses ? (p.poses.run || p.poses.cheer) : st), name: p.name, pet: p };
   }
   // 路線點：島i 左→中→右，接橋（曲線取樣）
   var stopIdx = [];
@@ -244,6 +244,7 @@
     root.appendChild(walker);
     walker.style.setProperty('--pw', Math.round(size * 0.27) + 'px');
     refreshPet();
+    setTimeout(function () { var mp = walker._p.pet; if (mp && mp.hi) say(pick(mp.hi), 3000); }, 1500);
     buildRoute(); seg = 0; dir = 1; pos = { x: route[0].x, y: route[0].y };
     place();
     if (!RM) raf = requestAnimationFrame(tick);
@@ -281,7 +282,9 @@
       if (target.stop !== undefined && !chasing) {       // 散步到島中央：停下來說話
         var s = ISL[target.stop];
         pauseUntil = t + 2600; walker.classList.add('rest'); img.src = walker._p.src;
-        say(fill(pick(LINES), s), 2400);
+        var mp = walker._p.pet, own = mp && [].concat(mp.cheer || mp.praise || [], mp.facts || [], mp.tap || []);
+        if (own && own.length && Math.random() < 0.55) { pauseUntil = t + 3400; say(pick(own), 3200); }   // 每隻萌寵自己的話
+        else say(fill(pick(LINES), s), 2400);
       }
       if (!chasing && (seg === 0 || seg === route.length - 1)) dir = -dir;
     } else { pos = { x: pos.x + dx / dist * speed, y: pos.y + dy / dist * speed }; }
