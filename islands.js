@@ -226,7 +226,7 @@
   function petImg() {
     var K = window.KGPet; if (!K) return { src: 'pets/honey/wave.webp', walk: 'pets/honey/cheer.webp', name: '蜜蜜' };
     var d = K.get(), p = (d.active && K.pet(d.active)) || K.pet('honey') || K.PETS[0];
-    var st = p.stages[0].img;
+    var o = d.owned && d.owned[p.id], st = (p.stages[(o ? K.stageOf(o.papers) : 1) - 1] || p.stages[0]).img;   // 目前進化到的造型
     return { src: K.url(p.poses ? p.poses.wave : st), walk: K.url(p.poses ? (p.poses.run || p.poses.cheer) : st), name: p.name, pet: p };
   }
   // 路線點：島i 左→中→右，接橋（曲線取樣）

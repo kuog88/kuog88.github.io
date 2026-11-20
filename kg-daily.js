@@ -142,8 +142,10 @@
     // 只留最近 60 天的紀錄
     Object.keys(d.days).sort().slice(0, -60).forEach(function (x) { delete d.days[x]; });
     save(d);
-    return { coins: coins, fire: fire, lucky: lucky, mile: mile, total: d.total, combo: combo, love: d.love, st: st };
+    var evo = window.KGPet && KGPet.LOVE_STAGE && KGPet.LOVE_STAGE.indexOf(d.love) >= 0 ? KGPet.STAGE_NAME[KGPet.LOVE_STAGE.indexOf(d.love) + 1] : '';
+    return { coins: coins, fire: fire, lucky: lucky, mile: mile, total: d.total, combo: combo, love: d.love, st: st, evo: evo };
   }
+  function loveNext(v) { var L = (window.KGPet && KGPet.LOVE_STAGE) || []; for (var i = 0; i < L.length; i++) if (L[i] > v) return '（' + L[i] + ' 進化）'; return ''; }
   function nextMile(total) { var ks = Object.keys(MILE).map(Number).sort(function (a, b) { return a - b; }); for (var i = 0; i < ks.length; i++) if (ks[i] > total) return ks[i]; return 0; }
 
   // ---------- 首頁卡片 ----------
@@ -200,7 +202,7 @@
     var s = tasks(), d = s.d, mons = monsters().length, nm = nextMile(d.total);
     root.innerHTML = '<div class="cd"><div class="hd"><b>📅 今日任務</b><span class="pill">🗓️ 完成 ' + d.total + ' 天</span>' +
       (s.combo > 1 ? '<span class="pill fire">🔥 連續 ' + s.combo + ' 天</span>' : '') +
-      (d.love ? '<span class="pill">💗 ' + esc(petName()) + '親密度 ' + d.love + '</span>' : '') + '</div>' +
+      (d.love ? '<span class="pill">💗 ' + esc(petName()) + '親密度 ' + d.love + loveNext(d.love) + '</span>' : '') + '</div>' +
       s.list.map(function (t) {
         var ok = t.now >= t.max;
         return '<div class="tk' + (ok ? ' ok' : '') + '"><span>' + (ok ? '✅' : t.ico) + '</span><span>' + t.txt + '</span>' +
@@ -288,8 +290,9 @@
         (r.fire ? '<p>🔥 連續 ' + r.combo + ' 天，多送 ' + r.fire * (r.lucky ? 2 : 1) + ' 晶幣</p>' : '') +
         (r.mile ? '<p>🏆 完成第 ' + r.total + ' 天里程碑，再送 <b>💎 ' + r.mile + '</b>！</p>' : '') +
         stLine(r.st) + '<p>💗 ' + esc(petName()) + '吃到點心了，親密度 ' + r.love + '</p>' +
+        (r.evo ? '<p style="font-size:20px;font-weight:900;color:#d84315">✨ ' + esc(petName()) + '進化成「' + r.evo + '」型態了！</p>' : '') +
         '<p class="meta">今天的任務都做完了，休息一下，明天再來喔！</p><button type="button" class="btn">太棒了！</button>';
-      w.querySelector('.btn').onclick = function () { w.remove(); render(); };
+      w.querySelector('.btn').onclick = function () { w.remove(); render(); if (window.onKGPetChange) window.onKGPetChange(); };
     }, 1600);
   }
 

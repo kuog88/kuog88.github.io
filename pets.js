@@ -23,11 +23,11 @@
   var STAGE_NAME = ['寶寶', '小小', '少年', '傳說'];
   var PETS = [
     { id: 'blue', name: '波波', desc: '戴蛙鏡的藍毛球，最喜歡數字和拼圖。', price: 20, star: 0,
-      stages: [{ img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }, { img: 'pets/fluffy-blue.webp' }] },
+      stages: [{ img: 'pets/fluffy-blue.webp' }, { img: 'pets/blue-s2.webp' }, { img: 'pets/blue-s3.webp' }, { img: 'pets/blue-s4.webp' }] },
     { id: 'green', name: '芽芽', desc: '頭上有觸角、三隻眼睛的綠毛球，最會觀察大自然。', price: 40, star: 2,
-      stages: [{ img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }, { img: 'pets/fluffy-green.webp' }] },
+      stages: [{ img: 'pets/fluffy-green.webp' }, { img: 'pets/green-s2.webp' }, { img: 'pets/green-s3.webp' }, { img: 'pets/green-s4.webp' }] },
     { id: 'orange', name: '樂樂', desc: '戴耳機的紫毛球，喜歡聽故事、夢想環遊世界。', price: 40, star: 2,
-      stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }, { img: 'pets/fluffy-orange.webp' }] },
+      stages: [{ img: 'pets/fluffy-orange.webp' }, { img: 'pets/orange-s2.webp' }, { img: 'pets/orange-s3.webp' }, { img: 'pets/orange-s4.webp' }] },
     // 贊助解鎖的萌寵：有 6 種姿勢（poses），會招手、寫作業、比讚、想事情、歡呼、睡覺，而且一直誇獎小朋友
     { id: 'honey', name: '蜜蜜', desc: '頭上長小芽、背著透明翅膀的黃毛球，最愛誇獎認真的小朋友！', price: 0, star: 0,
       sponsor: '💛 贊助已達 1000 元解鎖',
@@ -134,11 +134,14 @@
   }
   function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
   function pet(id) { for (var i = 0; i < PETS.length; i++) if (PETS[i].id === id) return PETS[i]; return null; }
-  function stageOf(papers) { return Math.min(RULE.maxStage, 1 + Math.floor((papers || 0) / RULE.papersPerStage)); }
+  // 進化有兩條路：寫完月考測驗卷（每 5 張一階），或每天做任務累積親密度（kg-daily-v1.love 達 5、15、30）
+  var LOVE_STAGE = [5, 15, 30];
+  function loveStage() { var v = 0; try { v = (JSON.parse(localStorage.getItem('kg-daily-v1')) || {}).love || 0; } catch (e) {} var s = 1; LOVE_STAGE.forEach(function (n) { if (v >= n) s++; }); return s; }
+  function stageOf(papers) { return Math.min(RULE.maxStage, Math.max(loveStage(), 1 + Math.floor((papers || 0) / RULE.papersPerStage))); }
   function url(p) { return /^(https?:)?\//.test(p) ? p : BASE + p; }
 
   var api = {
-    RULE: RULE, PETS: PETS, STAGE_NAME: STAGE_NAME, BASE: BASE,
+    RULE: RULE, PETS: PETS, STAGE_NAME: STAGE_NAME, BASE: BASE, LOVE_STAGE: LOVE_STAGE,
     get: load, stageOf: stageOf, pet: pet, url: url,
     // 交一張測驗卷：回傳得到的分數、是否算完成、是否進化
     addPaper: function (info) {
@@ -490,6 +493,6 @@
       if (s.indexOf('/kuog88.github.io/') === 0) t.src = 'https://kuog88.github.io/' + s.slice(18);
     }
   }, true);
-  window.addEventListener('storage', function (e) { if (e.key === KEY) refresh(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY || e.key === 'kg-daily-v1') refresh(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh); else refresh();
 })();
