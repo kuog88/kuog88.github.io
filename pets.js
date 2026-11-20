@@ -267,7 +267,9 @@
     el.title = (sd.p.title ? sd.p.title + ' ' : '') + sd.p.name + '（' + STAGE_NAME[sd.s - 1] + '）：點我一下！';
     img.alt = sd.p.name;
     var cr = el.querySelector('.crown');
-    if (sd.s >= 4 && !cr) el.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
+    var artCrown = sd.s >= 4 && sd.st.img !== sd.p.stages[0].img;   // 新造型本身就有皇冠，不再多放一個
+    if (artCrown && cr) { cr.remove(); cr = null; }
+    if (sd.s >= 4 && !cr && !artCrown) el.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
     if (sd.s < 4 && cr) cr.remove();
   }
   // 在畫面邊緣附近隨意走動，避開正中間的作答區
