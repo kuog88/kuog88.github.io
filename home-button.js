@@ -29,7 +29,7 @@
   // 家長報表（國文也載入：過關紀錄、大星星動畫）
   if (!window.KGReport) {
     var rs = document.createElement('script');
-    rs.src = 'https://kuog88.github.io/parent-report.js?v=20261108b';
+    rs.src = 'https://kuog88.github.io/parent-report.js?v=20261120';
     document.head.appendChild(rs);
   }
   // 月考測驗卷與隨機出現的萌寵（英文由另一邊獨立管理，不載入）

@@ -106,7 +106,8 @@
     if (changed) save(d);
     return d;
   }
-  function earned(d) { var t = 0; Object.keys(d.best).forEach(function (k) { t += d.best[k]; }); return t; }
+  function dailyBonus() { try { return (JSON.parse(localStorage.getItem('kg-daily-v1')) || {}).bonus || 0; } catch (e) { return 0; } }   // 每日寶箱、錯題小怪獸
+  function earned(d) { var t = dailyBonus(); Object.keys(d.best).forEach(function (k) { t += d.best[k]; }); return t; }
   function balance() { var d = sync(); return earned(d) - (d.spent || 0); }
 
   function buy(kind, id) {
@@ -285,7 +286,7 @@
         '<div class="tabs">' + [['sky', '🌅 天空'], ['bridge', '🌉 吊橋'], ['decor', '🎈 裝飾'], ['earn', '💎 怎麼賺晶幣']].map(function (t) { return '<button type="button" data-t="' + t[0] + '" class="' + (tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
       if (tab === 'earn') {
         var me = myGrade(), rows = progress();
-        h += '<div class="tip">闖關拿星星就會得到晶幣！<b>每個年級的每個學期，全部闖滿都是 1000 晶幣</b>（一、二年級：數學、國文各 500；三～六年級：數學、自然、社會、國文各 250）。<br>自己年級拿滿了，還可以去<b>挑戰別的年級</b>，再多賺 1000！月考測驗卷的星星是換萌寵用的，不算在這裡。</div>';
+        h += '<div class="tip">闖關拿星星就會得到晶幣！<b>每個年級的每個學期，全部闖滿都是 1000 晶幣</b>（一、二年級：數學、國文各 500；三～六年級：數學、自然、社會、國文各 250）。<br>自己年級拿滿了，還可以去<b>挑戰別的年級</b>，再多賺 1000！月考測驗卷的星星是換萌寵用的，不算在這裡。<br>📅 <b>每天做完首頁的三個任務開寶箱</b>、打倒👾錯題小怪獸，也會得到晶幣' + (dailyBonus() ? '（已經拿到 ' + dailyBonus() + '）' : '') + '！</div>';
         rows.forEach(function (r) {
           if (!r.made) return;
           var best = 0; r.subj.forEach(function (x) { best += Math.max(x.coins, d.best[r.key + x.id] || 0); });

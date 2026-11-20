@@ -112,6 +112,9 @@
     <p><a href="https://kuog88.github.io/social-puzzle/">社會</a>｜<a href="https://kuog88.github.io/science5-quest/">自然</a>｜<a href="https://kuog88.github.io/math5a-lab/">數學</a>｜<a href="https://kuog88.github.io/guoyu-island/">國文</a>｜<a href="https://kuog88.github.io/galaxy-english/">英文</a></p>
   </noscript>
 
+  <!-- 每日任務、寶箱、錯題小怪獸（kg-daily.js） -->
+  <div id="kg-daily"></div>
+
   <div class="duo">
     <a class="donate report" href="report.html">📊 家長報表</a>
     <a class="donate report wb" href="wrongbook.html">📕 錯題本</a>
@@ -135,7 +138,8 @@
   window.onKGPetChange = function () { if (!window.KGPet) return; var d = KGPet.get(), b = document.getElementById('pet-btn'), p = d.active && KGPet.pet(d.active); if (b) b.textContent = p ? '🐾 我的萌寵：' + p.name : '🐾 選一隻萌寵陪我'; };
   window.addEventListener('load', window.onKGPetChange);
 </script>
-<script src="kg-sky.js?v=20261109a"></script>
+<script src="kg-sky.js?v=20261120"></script>
+<script src="kg-daily.js?v=20261120"></script>
 <script src="kg-backup.js?v=20261108b"></script>
 <script src="islands.js?v=20261110a"></script>
 <script src="https://kuog88.github.io/bgm.js" defer></script>

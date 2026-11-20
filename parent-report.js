@@ -81,6 +81,7 @@
       L.plays = (L.plays || 0) + 1; L.last = Date.now();
       if (res.stars !== undefined) L.stars = Math.max(L.stars || 0, +res.stars || 0);
       if (res.total) L.lastScore = (res.right || 0) + '/' + res.total;
+      var dk = day(Date.now()); g.days[dk] = g.days[dk] || { r: 0, w: 0, ms: 0 }; g.days[dk].lv = (g.days[dk].lv || 0) + 1;   // 今天闖完幾關（每日任務用）
       g.last = Date.now(); save(d);
       if (+res.stars > 0) starPop(+res.stars);
     },
