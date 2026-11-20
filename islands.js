@@ -22,6 +22,7 @@
     '.isl .art img.fb{opacity:0}.isl.f1 .art img.fb{opacity:1}' +
     '.isl.f2 .art img{filter:brightness(1.1) saturate(1.15) drop-shadow(0 0 14px rgba(255,236,160,.9))}' +
     '.isl .tag{position:absolute;left:50%;bottom:-4%;transform:translateX(-50%);white-space:nowrap;background:#fff;border:4px solid var(--c);box-shadow:0 5px 0 var(--c);border-radius:999px;padding:4px 16px 5px;font-weight:900;font-size:clamp(17px,2.2vw,22px);color:var(--c);text-align:center;line-height:1.15}' +
+    '.isl .lv{position:absolute;right:2%;top:16%;z-index:3;background:#fff;border:3px solid var(--c);border-radius:999px;padding:1px 9px;font-weight:900;font-size:clamp(12px,1.5vw,15px);color:var(--c);box-shadow:0 3px 0 var(--c);white-space:nowrap}' +
     '.isl .tag small{display:block;font-size:.58em;font-weight:700;color:#7a6a5a}' +
     '.isl .spk{position:absolute;pointer-events:none;font-size:18px;animation:islSpk 1.6s ease-out forwards}' +
     '#isl-walker{position:absolute;z-index:5;width:var(--pw,64px);height:var(--pw,64px);transform:translate(-50%,-92%);cursor:pointer;pointer-events:auto}' +
@@ -66,6 +67,21 @@
     root.appendChild(a);
     return a;
   });
+  // 島嶼等級：闖關拿到的星星越多，這一科的島等級越高（kg-sky.js 計算；英文不算）
+  function islandLevels() {
+    if (!window.KGSky || !KGSky.subjLevels) return;
+    var L = KGSky.subjLevels(), MAP = { nature: 'science' };
+    ISL.forEach(function (s, i) {
+      var v = L[MAP[s.id] || s.id], b = els[i].querySelector('.lv');
+      if (!v) { if (b) b.remove(); return; }
+      if (!b) { b = document.createElement('span'); b.className = 'lv'; els[i].appendChild(b); }
+      var stars = v.lv >= 16 ? '👑' : v.lv >= 11 ? '🌟' : v.lv >= 6 ? '⭐' : '🌱';
+      b.textContent = stars + ' Lv.' + v.lv;
+      b.title = s.name + '島等級 ' + v.lv + '：在這一科拿到越多星星，等級越高';
+    });
+  }
+  islandLevels();
+  addEventListener('pageshow', islandLevels);
 
   // 三格動畫：主圖 → 變化圖 → 主圖＋發光（每座島錯開時間）
   if (!RM) els.forEach(function (a, i) {

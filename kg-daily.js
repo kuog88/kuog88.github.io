@@ -18,9 +18,56 @@
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function petName() { var K = window.KGPet; if (!K) return '萌寵'; var d = K.get(), p = d.active && K.pet(d.active); return p ? p.name : '萌寵'; }
 
+  // ---------- 貼紙簿 ----------
+  var SETS = [
+    { id: 'zoo', name: '動物園', e: ['🐶', '🐱', '🐰', '🦊', '🐼', '🐨', '🐯', '🐵'] },
+    { id: 'sea', name: '海底世界', e: ['🐬', '🐳', '🐙', '🦀', '🐠', '🐢', '🦈', '🐚'] },
+    { id: 'space', name: '太空探險', e: ['🚀', '🛸', '🌍', '🌙', '⭐', '☄️', '🛰️', '👨‍🚀'] },
+    { id: 'food', name: '好吃的', e: ['🍎', '🍓', '🍉', '🍩', '🍦', '🍰', '🍙', '🧋'] },
+    { id: 'bug', name: '小小昆蟲', e: ['🦋', '🐞', '🐝', '🐛', '🐜', '🦗', '🐌', '🪲'] },
+    { id: 'car', name: '交通工具', e: ['🚗', '🚌', '🚒', '🚂', '✈️', '🚁', '⛵', '🚲'] },
+    { id: 'legend', name: '傳說（打倒週末魔王）', rare: true, e: ['🐉', '🦄', '👑', '🏆', '🔮', '🧙'] }
+  ];
+  var SET_BONUS = 100;
+  function stCount(d) { var n = 0; SETS.forEach(function (S) { S.e.forEach(function (x) { if ((d.st || {})[x]) n++; }); }); return n; }
+  function stTotal() { var n = 0; SETS.forEach(function (S) { n += S.e.length; }); return n; }
+  // 給一張貼紙（60% 機會優先給還沒有的），集滿一套送晶幣。回傳 { e, isNew, set, done }
+  function giveSticker(d, rare) {
+    d.st = d.st || {}; d.setDone = d.setDone || {};
+    var pool = [], fresh = [];
+    SETS.forEach(function (S) { if (!!S.rare !== !!rare) return; S.e.forEach(function (x) { pool.push([x, S]); if (!d.st[x]) fresh.push([x, S]); }); });
+    var from = fresh.length && (rare || Math.random() < 0.6) ? fresh : pool, pk = from[Math.floor(Math.random() * from.length)];
+    var isNew = !d.st[pk[0]]; d.st[pk[0]] = (d.st[pk[0]] || 0) + 1;
+    var done = !d.setDone[pk[1].id] && pk[1].e.every(function (x) { return d.st[x]; });
+    if (done) { d.setDone[pk[1].id] = Date.now(); d.bonus += SET_BONUS; }
+    return { e: pk[0], isNew: isNew, set: pk[1].name, done: done };
+  }
+  function stLine(g) { return '<p>📔 得到貼紙 <span style="font-size:34px;vertical-align:middle">' + g.e + '</span>' + (g.isNew ? '（新的！）' : '（已經有了）') + (g.done ? '<br>🎊 「' + g.set + '」集滿了！再送 <b>💎 ' + SET_BONUS + '</b>' : '') + '</p>'; }
+
+  // ---------- 週末魔王：星期六、日闖關就會打到牠 ----------
+  var BOSS_HP = 6, BOSS_COIN = 60;
+  function weekend() {
+    var n = new Date(), w = n.getDay(); if (w !== 0 && w !== 6) return null;
+    var sat = w === 6 ? Date.now() : Date.now() - 86400000, sun = sat + 86400000;
+    return { key: dayKey(sat), days: [dayKey(sat), dayKey(sun)] };
+  }
+  function boss() {
+    var W = weekend(), d = load(); if (!W) return { on: false, wait: (6 - new Date().getDay()) };
+    var lv = 0, subj = [], mon = 0;
+    W.days.forEach(function (k) { var t = today(k); lv += t.lv; t.subj.forEach(function (x) { if (subj.indexOf(x) < 0) subj.push(x); }); mon += (d.days[k] || {}).mon || 0; });
+    var dmg = lv + Math.max(0, subj.length - 1) + Math.floor(mon / 2);
+    return { on: true, key: W.key, hp: Math.max(0, BOSS_HP - dmg), dmg: dmg, won: (d.boss || {})[W.key] };
+  }
+  function beatBoss() {
+    var b = boss(), d = load(); if (!b.on || b.hp > 0 || b.won) return null;
+    d.boss = {}; d.boss[b.key] = Date.now(); d.bonus += BOSS_COIN; d.love += 2;
+    var g = giveSticker(d, true); save(d);
+    return g;
+  }
+
   // ---------- 今天做了什麼（從家長報表算） ----------
-  function today() {
-    var r = J(RKEY, { games: {} }), k = dayKey(), out = { lv: 0, right: 0, subj: [] };
+  function today(key) {
+    var r = J(RKEY, { games: {} }), k = key || dayKey(), out = { lv: 0, right: 0, subj: [] };
     Object.keys(r.games || {}).forEach(function (id) {
       var g = r.games[id], t = g.days && g.days[k]; if (!t) return;
       out.lv += t.lv || 0; out.right += t.r || 0;
@@ -91,10 +138,11 @@
     d.total++; d.combo = combo; d.last = k; d.love++;
     var mile = MILE[d.total] || 0;
     d.bonus += coins + mile; d.days[k].chest = coins + mile;
+    var st = giveSticker(d, false);
     // 只留最近 60 天的紀錄
     Object.keys(d.days).sort().slice(0, -60).forEach(function (x) { delete d.days[x]; });
     save(d);
-    return { coins: coins, fire: fire, lucky: lucky, mile: mile, total: d.total, combo: combo, love: d.love };
+    return { coins: coins, fire: fire, lucky: lucky, mile: mile, total: d.total, combo: combo, love: d.love, st: st };
   }
   function nextMile(total) { var ks = Object.keys(MILE).map(Number).sort(function (a, b) { return a - b; }); for (var i = 0; i < ks.length; i++) if (ks[i] > total) return ks[i]; return 0; }
 
@@ -114,6 +162,17 @@
     '#kg-daily .chest.go{background:linear-gradient(90deg,#ffb300,#ff7043);color:#fff;box-shadow:0 5px 0 #c7511f;animation:kgdPulse 1.1s ease-in-out infinite}' +
     '#kg-daily .chest.fin{background:#eafaf0;color:#1e7a45;cursor:default}' +
     '#kg-daily .mon{display:block;width:100%;margin-top:8px;font:800 16px ' + FONT + ';padding:9px;border-radius:14px;border:3px solid #8a6cff;background:#fff;color:#6c4ad6;cursor:pointer}' +
+    '#kg-daily .mon.st{border-color:#e0954a;color:#b5651d}' +
+    '#kg-daily .boss{margin-top:8px;border-radius:14px;padding:8px 12px;font-size:15px;font-weight:700;line-height:1.6;background:#f3efff;border:2px solid #cbbcff;color:#4a3a8a}' +
+    '#kg-daily .boss.off{background:#f4f1ea;border-color:#e3dccb;color:#8a7a66;font-weight:600;font-size:14px}' +
+    '#kg-daily .boss.on{background:#fff0f0;border-color:#f2a3a3;color:#a63a3a}#kg-daily .boss.win{background:#eafaf0;border-color:#7fd3a0;color:#1e7a45}' +
+    '#kg-daily .boss.pl2{background:#eef7ff;border-color:#a9d0f5;color:#2b5f8f}#kg-daily .boss small{font-weight:600}' +
+    '#kg-daily .pl{display:block;width:100%;margin-top:8px;font:700 14px ' + FONT + ';padding:6px 10px;border-radius:12px;border:2px dashed #a9d0f5;background:#fff;color:#2b5f8f;cursor:pointer}' +
+    '#kgd-pop .set{text-align:left;margin-top:10px}#kgd-pop .sg{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:4px}' +
+    '#kgd-pop .s1{position:relative;font-size:28px;line-height:1.5;text-align:center;background:#fff8e6;border:2px solid #f3d9a0;border-radius:10px}' +
+    '#kgd-pop .s1.no{color:#cfc6b4;background:#f3f1ec;border-style:dashed;border-color:#ddd6c6;font-size:20px;line-height:2.1;font-weight:900}' +
+    '#kgd-pop .s1 i{position:absolute;right:1px;bottom:-2px;font:800 10px sans-serif;color:#b5651d}' +
+    '@media (max-width:420px){#kgd-pop .s1{font-size:22px}#kgd-pop .s1.no{font-size:16px}}' +
     '#kg-daily .ft{margin-top:8px;font-size:13px;color:#8a7a66;line-height:1.5}' +
     '@keyframes kgdPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}' +
     '#kgd-pop{position:fixed;inset:0;z-index:2147482500;background:rgba(30,20,50,.6);display:grid;place-items:center;padding:14px;font-family:' + FONT + '}' +
@@ -151,10 +210,68 @@
         : s.all ? '<button type="button" class="chest go" data-chest>🎁 任務完成！開寶箱</button>'
           : '<button type="button" class="chest" disabled>🔒 完成 3 個任務就能開寶箱（' + s.done + ' / 3）</button>') +
       (mons ? '<button type="button" class="mon" data-mon>👾 錯題小怪獸：還有 ' + mons + ' 隻（打倒 1 隻 💎 1）</button>' : '') +
+      bossHtml() + pledgeHtml(d) +
+      '<button type="button" class="mon st" data-st>📔 我的貼紙簿（' + stCount(d) + ' / ' + stTotal() + '）</button>' +
       '<div class="ft">每天做完三個任務就可以開一次寶箱，得到晶幣去裝飾天空城。' + (nm ? '再完成 ' + (nm - d.total) + ' 天有大獎 💎 ' + MILE[nm] + '！' : '') + '</div></div>';
     var c = root.querySelector('[data-chest]'); if (c) c.onclick = chestPop;
     root.querySelectorAll('[data-mon]').forEach(function (b) { b.onclick = fight; });
+    var q;
+    if ((q = root.querySelector('[data-st]'))) q.onclick = stickerBook;
+    if ((q = root.querySelector('[data-boss]'))) q.onclick = bossPop;
+    if ((q = root.querySelector('[data-pl]'))) q.onclick = function () { gate(pledgeForm); };
     if (window.KGSky && KGSky.refreshBtn) KGSky.refreshBtn();
+  }
+  function bossHtml() {
+    var b = boss();
+    if (!b.on) return '<div class="boss off">🐉 週末魔王' + (b.wait <= 1 ? '明天' : '星期六') + '出現！星期六、日闖關就能打牠，贏了有傳說貼紙。</div>';
+    if (b.won) return '<div class="boss win">🏆 這個週末的魔王被你打敗了！下週末會有新的魔王。</div>';
+    var hearts = ''; for (var i = 0; i < BOSS_HP; i++) hearts += i < b.hp ? '❤️' : '🖤';
+    return '<div class="boss on"><b>🐉 週末魔王來襲！</b> ' + hearts + '<br><small>每闖完 1 關打 1 下，換一科再多打 1 下，打倒 2 隻錯題小怪獸也算 1 下。</small>' +
+      (b.hp <= 0 ? '<button type="button" class="chest go" data-boss>⚔️ 給魔王最後一擊！</button>' : '') + '</div>';
+  }
+  function bossPop() {
+    var g = beatBoss(); if (!g) { render(); return; }
+    var w = pop('<div class="big">🐉💥</div><h2>魔王被你打敗了！</h2><div class="coin">💎 +' + BOSS_COIN + '</div>' + stLine(g) +
+      '<p>💗 ' + esc(petName()) + '好崇拜你，親密度 +2</p><button type="button" class="btn">耶！</button>');
+    w.querySelector('.btn').onclick = function () { w.remove(); render(); };
+  }
+  function stickerBook() {
+    var d = load(), st = d.st || {};
+    var w = pop('<h2>📔 我的貼紙簿（' + stCount(d) + ' / ' + stTotal() + '）</h2><p class="meta">每天開寶箱、一次打倒 3 隻小怪獸都會得到貼紙。集滿一套送 💎 ' + SET_BONUS + '！</p>' +
+      SETS.map(function (S) {
+        var have = S.e.filter(function (x) { return st[x]; }).length;
+        return '<div class="set"><b>' + S.name + '</b> <span class="meta">' + have + ' / ' + S.e.length + (have === S.e.length ? ' 🎊 集滿了' : '') + '</span><div class="sg">' +
+          S.e.map(function (x) { return st[x] ? '<span class="s1">' + x + (st[x] > 1 ? '<i>×' + st[x] + '</i>' : '') + '</span>' : '<span class="s1 no">？</span>'; }).join('') + '</div></div>';
+      }).join('') + '<button type="button" class="btn">關閉</button>');
+    w.querySelector('.btn').onclick = function () { w.remove(); };
+  }
+  // ---------- 爸媽的約定 ----------
+  function pledgeHtml(d) {
+    var p = d.pledge;
+    if (!p) return '<button type="button" class="pl" data-pl>🤝 爸媽可以在這裡設定「約定獎勵」</button>';
+    var got = d.total - p.from, ok = got >= p.need;
+    return '<div class="boss ' + (ok ? 'win' : 'pl2') + '">🤝 爸媽的約定：再完成 <b>' + p.need + '</b> 天任務 → <b>' + esc(p.txt) + '</b><br>' +
+      (ok ? '🎉 達成了！快去找爸媽兌現！' : '進度 ' + got + ' / ' + p.need + ' 天') +
+      ' <button type="button" class="pl" data-pl style="display:inline;width:auto;margin:0 0 0 6px">' + (ok ? '已兌現，設定新的' : '修改') + '</button></div>';
+  }
+  // 家長才會的小算術，避免孩子自己改
+  function gate(next) {
+    var a = 12 + Math.floor(Math.random() * 18), b = 6 + Math.floor(Math.random() * 4);
+    var w = pop('<h2>🔐 這裡請爸媽操作</h2><p>請回答：' + a + ' × ' + b + ' = ？</p><input type="number" inputmode="numeric" style="font:800 20px ' + FONT + ';width:140px;padding:8px;border-radius:12px;border:3px solid #cbbcff;text-align:center">' +
+      '<br><button type="button" class="btn">確定</button> <button type="button" class="btn sub">取消</button>');
+    var bs = w.querySelectorAll('.btn');
+    bs[1].onclick = function () { w.remove(); };
+    bs[0].onclick = function () { if (+w.querySelector('input').value === a * b) { w.remove(); next(); } else { w.querySelector('p').textContent = '答案不對喔，請爸媽來幫忙：' + a + ' × ' + b + ' = ？'; } };
+  }
+  function pledgeForm() {
+    var d = load(), p = d.pledge || {};
+    var w = pop('<h2>🤝 設定約定獎勵</h2><p class="meta">跟孩子約定：再完成幾天的每日任務，就可以得到什麼。孩子會在首頁看到進度。</p>' +
+      '<p>再完成 <select style="font:800 18px ' + FONT + ';padding:6px;border-radius:10px">' + [3, 5, 7, 10, 14, 21, 30].map(function (n) { return '<option' + (n === (p.need || 7) ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select> 天任務</p>' +
+      '<input type="text" maxlength="30" placeholder="例如：週末去公園玩" style="font:700 18px ' + FONT + ';width:100%;box-sizing:border-box;padding:10px;border-radius:12px;border:3px solid #cbbcff">' +
+      '<br><button type="button" class="btn">存起來</button> <button type="button" class="btn sub">' + (d.pledge ? '取消這個約定' : '取消') + '</button>');
+    var bs = w.querySelectorAll('.btn'), inp = w.querySelector('input');
+    bs[0].onclick = function () { var t = inp.value.trim(); if (!t) { inp.focus(); return; } var d2 = load(); d2.pledge = { txt: t, need: +w.querySelector('select').value, from: d2.total }; save(d2); w.remove(); render(); };
+    bs[1].onclick = function () { var d2 = load(); delete d2.pledge; save(d2); w.remove(); render(); };
   }
   function pop(html) {
     var old = document.getElementById('kgd-pop'); if (old) old.remove();
@@ -170,7 +287,7 @@
         '<div class="coin">💎 +' + r.coins + '</div>' +
         (r.fire ? '<p>🔥 連續 ' + r.combo + ' 天，多送 ' + r.fire * (r.lucky ? 2 : 1) + ' 晶幣</p>' : '') +
         (r.mile ? '<p>🏆 完成第 ' + r.total + ' 天里程碑，再送 <b>💎 ' + r.mile + '</b>！</p>' : '') +
-        '<p>💗 ' + esc(petName()) + '吃到點心了，親密度 ' + r.love + '</p>' +
+        stLine(r.st) + '<p>💗 ' + esc(petName()) + '吃到點心了，親密度 ' + r.love + '</p>' +
         '<p class="meta">今天的任務都做完了，休息一下，明天再來喔！</p><button type="button" class="btn">太棒了！</button>';
       w.querySelector('.btn').onclick = function () { w.remove(); render(); };
     }, 1600);
@@ -182,10 +299,11 @@
     if (!qs.length) return;
     var w = pop('');
     function end() {
-      var d = load();
+      var d = load(), k0 = dayKey(), rec0 = d.days[k0] = d.days[k0] || {}, stg = null;
+      if (beat >= 3 && !rec0.ms) { rec0.ms = 1; stg = giveSticker(d, false); save(d); }
       w.querySelector('.bx').innerHTML = '<div class="big">' + (beat ? '🏆' : '💪') + '</div><h2>打倒了 ' + beat + ' 隻小怪獸！</h2>' +
         (gain ? '<div class="coin">💎 +' + gain + '</div>' : (beat ? '<p class="meta">今天打怪的晶幣已經拿滿 ' + MON_CAP + ' 個了，但訂正還是算數喔！</p>' : '')) +
-        '<p>打倒的題目已經從錯題本變成「已訂正」。' + (monsters().length ? '還有 ' + monsters().length + ' 隻在等你。' : '所有小怪獸都被你打倒了！🎉') + '</p>' +
+        (stg ? stLine(stg) : '') + '<p>打倒的題目已經從錯題本變成「已訂正」。' + (monsters().length ? '還有 ' + monsters().length + ' 隻在等你。' : '所有小怪獸都被你打倒了！🎉') + '</p>' +
         '<button type="button" class="btn">好！</button>';
       w.querySelector('.btn').onclick = function () { w.remove(); render(); };
     }
@@ -223,7 +341,7 @@
     show();
   }
 
-  window.KGDaily = { render: render, tasks: tasks, bonus: function () { return load().bonus; }, get: load, monsters: monsters };
+  window.KGDaily = { render: render, boss: boss, giveSticker: giveSticker, tasks: tasks, bonus: function () { return load().bonus; }, get: load, monsters: monsters };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
   addEventListener('pageshow', render);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) render(); });

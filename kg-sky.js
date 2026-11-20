@@ -110,6 +110,14 @@
   function earned(d) { var t = dailyBonus(); Object.keys(d.best).forEach(function (k) { t += d.best[k]; }); return t; }
   function balance() { var d = sync(); return earned(d) - (d.spent || 0); }
 
+  // 每一科的島嶼等級：每拿到一個學期該科 20% 的晶幣升 1 級（跨年級會一直累積）
+  function subjLevels() {
+    var d = sync(), sum = {};
+    progress().forEach(function (r) { r.subj.forEach(function (x) { if (!x.share) return; sum[x.id] = (sum[x.id] || 0) + Math.max(x.coins, d.best[r.key + x.id] || 0) / x.share; }); });
+    var out = {}; Object.keys(sum).forEach(function (k) { out[k] = { lv: 1 + Math.floor(sum[k] * 5 + 1e-9), pct: sum[k] }; });
+    return out;
+  }
+
   function buy(kind, id) {
     var it = item(kind, id), d = sync(); if (!it) return false;
     var k = kind + ':' + id;
@@ -323,7 +331,7 @@
   }
   function refreshBtn() { var b = document.getElementById('sky-btn'); if (b) b.textContent = '💎 天空城商店（' + balance() + ' 晶幣）'; }
 
-  window.KGSky = { open: openShop, balance: balance, progress: progress, placeDecor: placeDecor, bridgeStyle: bridgeStyle, apply: apply, refreshBtn: refreshBtn, SHOP: SHOP };
+  window.KGSky = { subjLevels: subjLevels, open: openShop, balance: balance, progress: progress, placeDecor: placeDecor, bridgeStyle: bridgeStyle, apply: apply, refreshBtn: refreshBtn, SHOP: SHOP };
   function boot() { apply(); refreshBtn(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
