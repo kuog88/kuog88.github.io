@@ -245,7 +245,9 @@
       }
     }
   }
-  function say(t, ms) { bub.textContent = t; bub.classList.add('on'); clearTimeout(bub._t); bub._t = setTimeout(function () { bub.classList.remove('on'); }, ms || 2200); }
+  function say(t, ms) { bub.textContent = t; bub.style.transform = 'translateX(-50%)';
+    try { var br = bub.getBoundingClientRect(), dx = br.left < 8 ? 8 - br.left : br.right > innerWidth - 8 ? innerWidth - 8 - br.right : 0; if (dx) bub.style.transform = 'translateX(calc(-50% + ' + Math.round(dx) + 'px))'; } catch (e) {}   // 對話框不要被螢幕邊緣切掉
+    bub.classList.add('on'); clearTimeout(bub._t); bub._t = setTimeout(function () { bub.classList.remove('on'); }, ms || 2200); }
   var LINES = ['這裡是{n}島！一起去{s}闖關吧！', '{s}好漂亮喔～點我旁邊的島就能進去！', '下一站，{n}！', '我最喜歡{n}了！你呢？'];
   var TIRED = ['你跑慢點啦～我快累死了！', '等等我！我的腿比較短啦！', '呼…呼…你滑太快了！', '慢一點～我追不上了！', '咻～我來了我來了！'];
   var PICK = ['這裡是{n}島！要進去{s}嗎？點一下島就出發！', '你決定要去哪一座島了嗎？選好就點下去吧！', '{n}島到了！今天想挑戰{n}嗎？',

@@ -229,6 +229,7 @@
     '@keyframes kgpPop{0%,100%{scale:1}50%{scale:1.25}}' +
     '@keyframes kgpFly{0%{opacity:1;translate:-50% 0}100%{opacity:0;translate:-50% -60px}}' +
     '@media (max-width:600px){#kg-pet{width:66px;height:66px}#kg-pet.s2{width:74px;height:74px}#kg-pet.s3{width:82px;height:82px}#kg-pet.s4{width:90px;height:90px}}' +
+    '@media (max-width:600px){#kg-pet.fixed,#kg-pet.fixed.s2,#kg-pet.fixed.s3,#kg-pet.fixed.s4{width:58px;height:58px}}' +   /* 手機闖關畫面：固定小小一隻，不擋題目 */
     '@media print{#kg-pet{display:none}}' +
     '@media (prefers-reduced-motion:reduce){#kg-pet{transition:none}#kg-pet img{animation:none!important}}';
 

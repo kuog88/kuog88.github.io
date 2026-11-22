@@ -159,7 +159,7 @@
     '#kg-daily .tk{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #f0dcc0;border-radius:14px;padding:8px 10px;margin-top:6px;font-size:16px;font-weight:700}' +
     '#kg-daily .tk.ok{background:#eafaf0;border-color:#7fd3a0;color:#1e7a45}' +
     '#kg-daily .tk .n{margin-left:auto;font-size:14px;white-space:nowrap;color:#8a7a66}#kg-daily .tk.ok .n{color:#1e7a45}' +
-    '#kg-daily .tk button{margin-left:auto;font:800 14px ' + FONT + ';border:none;background:#8a6cff;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;white-space:nowrap}' +
+    '#kg-daily .tk button{margin-left:auto;font:800 14px ' + FONT + ';border:none;background:#8a6cff;color:#fff;border-radius:999px;padding:10px 14px;min-height:42px;cursor:pointer;white-space:nowrap}' +
     '#kg-daily .chest{display:block;width:100%;margin-top:10px;font:900 19px ' + FONT + ';padding:12px;border-radius:16px;border:none;cursor:pointer;background:#e8e2d4;color:#9a8f7a}' +
     '#kg-daily .chest.go{background:linear-gradient(90deg,#ffb300,#ff7043);color:#fff;box-shadow:0 5px 0 #c7511f;animation:kgdPulse 1.1s ease-in-out infinite}' +
     '#kg-daily .chest.fin{background:#eafaf0;color:#1e7a45;cursor:default}' +
