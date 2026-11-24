@@ -4,6 +4,36 @@
 // 遊戲可以主動呼叫 BGM.level('關卡代號') 換曲；沒呼叫的話，會依畫面上的關卡標題自動換曲。
 (function () {
   if (window.BGM) return;
+
+  // ---------- iPad／iPhone：靜音模式下也要有聲音 ----------
+  // 這個網站的音樂、音效都是 Web Audio 即時合成的。iPad、iPhone 開著「靜音模式」（控制中心的鈴鐺）時，
+  // Safari 會把 Web Audio 當成鈴聲一起關掉，所以「手機有聲音、iPad 沒聲音」。
+  // 做法：把這一頁的聲音宣告成「播放媒體」，就和看影片一樣，不受靜音模式影響。
+  (function () {
+    var ua = navigator.userAgent || '';
+    var ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);   // iPad 會假裝成 Mac
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}          // iOS／iPadOS 17 以上
+    if (!ios) return;
+    // 舊版 iOS 沒有 audioSession：第一次點畫面時播一段沒有聲音的 <audio>，系統就會切到「播放媒體」
+    function silentWav() {   // 1 秒、8000Hz、8 位元的無聲 WAV
+      var n = 8000, b = new Uint8Array(44 + n), v = new DataView(b.buffer), w = function (o, t) { for (var i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+      w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+      for (var i = 44; i < b.length; i++) b[i] = 128;
+      return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+    }
+    var el = null;
+    function kick() {
+      try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) {}
+      if (navigator.audioSession) return;
+      try {
+        if (!el) { el = document.createElement('audio'); el.src = silentWav(); el.loop = true; el.setAttribute('playsinline', ''); el.volume = 0.01; el.style.display = 'none'; (document.body || document.documentElement).appendChild(el); }
+        if (el.paused) { var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); }
+      } catch (e) {}
+    }
+    ['touchend', 'pointerup', 'click'].forEach(function (ev) { window.addEventListener(ev, kick, { capture: true, passive: true }); });
+    document.addEventListener('visibilitychange', function () { if (el && document.hidden) { try { el.pause(); } catch (e) {} } });
+  })();
   var STORE = 'kg-bgm-on';
   var on = true;
   try { on = localStorage.getItem(STORE) !== '0'; } catch (e) {}
@@ -160,12 +190,12 @@
 
   // 瀏覽器規定要使用者先互動才能出聲
   function start() {
-    if (started) { if (ac && ac.state === 'suspended') ac.resume(); return; }
+    if (started) { if (ac && ac.state !== 'running') { try { ac.resume(); } catch (e) {} } return; }
     started = true; init();
-    if (ac && ac.state === 'suspended') ac.resume();
+    if (ac && ac.state !== 'running') { try { ac.resume(); } catch (e) {} }
     var k = songKey || (manual ? 'lobby' : autoKey()); songKey = null; play(k);
   }
-  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, start, { capture: true, passive: true }); });
+  ['pointerdown', 'keydown', 'touchstart', 'touchend', 'click'].forEach(function (ev) { window.addEventListener(ev, start, { capture: true, passive: true }); });
   document.addEventListener('visibilitychange', function () {
     if (!ac) return;
     if (document.hidden) ac.suspend(); else if (on && started) ac.resume();
