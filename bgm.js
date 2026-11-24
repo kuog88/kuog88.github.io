@@ -10,6 +10,7 @@
   // Safari 會把 Web Audio 當成鈴聲一起關掉，所以「手機有聲音、iPad 沒聲音」。
   // 做法：把這一頁的聲音宣告成「播放媒體」，就和看影片一樣，不受靜音模式影響。
   (function () {
+    if (window.__kgAudioSession) return; window.__kgAudioSession = 1;
     var ua = navigator.userAgent || '';
     var ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);   // iPad 會假裝成 Mac
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}          // iOS／iPadOS 17 以上
